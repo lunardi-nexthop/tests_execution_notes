@@ -63,3 +63,43 @@ SKIPPED [2] ipfwd/test_mtu.py:15: Unsupported topology.
 ============================================================================= 2 skipped, 1 warning in 7.14s ==============================================================================
 ```
 
+### Successful run LOG:
+
+```
+...
+...
+callback   = <pytest_ansible.module_dispatcher.v213.ResultAccumulator object at 0x7ffbaacffc10>
+complex_args = {'path': '/root/ptftests', 'state': 'absent'}
+extra_hosts = []
+hosts      = [ptf_vms1-4]
+kwargs     = {'inventory': <ansible.inventory.manager.InventoryManager object at 0x7ffbaadb9a60>, 'loader': <ansible.parsing.datalo...ss': None}, 'stdout_callback': <pytest_ansible.module_dispatcher.v213.ResultAccumulator object at 0x7ffbaacffc10>, ...}
+kwargs_extra = {}
+module_args = ()
+no_hosts   = False
+play       = pytest-ansible
+play_ds    = {'become': True, 'become_user': 'root', 'gather_facts': 'no', 'hosts': 'ptf_vms1-4', ...}
+play_extra = None
+self       = <pytest_ansible.module_dispatcher.v213.ModuleDispatcherV213 object at 0x7ffbaadc0c70>
+tqm        = <ansible.executor.task_queue_manager.TaskQueueManager object at 0x7ffbaa6cf310>
+verbosity  = None
+verbosity_syntax = '-vvvvv'
+
+/usr/local/lib/python3.8/dist-packages/pytest_ansible/module_dispatcher/v213.py:232: AnsibleConnectionFailure
+==================================================================================== warnings summary ====================================================================================
+../../../../usr/local/lib/python3.8/dist-packages/paramiko/transport.py:236
+  /usr/local/lib/python3.8/dist-packages/paramiko/transport.py:236: CryptographyDeprecationWarning: Blowfish has been deprecated
+    "class": algorithms.Blowfish,
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+---------------------------------------------------------------------------- generated xml file: /tmp/tr.xml -----------------------------------------------------------------------------
+================================================================================ short test summary info =================================================================================
+ERROR ipfwd/test_mtu.py::test_mtu[usschq-nswdut-t002-None-1514] - Failed: ARP table is not rebuilt in given time
+ERROR ipfwd/test_mtu.py::test_mtu[usschq-nswdut-t002-None-9114] - Failed: ARP table is not rebuilt in given time
+ERROR ipfwd/test_mtu.py::test_mtu[usschq-nswdut-t002-None-9114] - pytest_ansible.errors.AnsibleConnectionFailure: Host unreachable in the inventory
+======================================================================== 1 warning, 3 errors in 309.94s (0:05:09) ========================================================================
+INFO:root:Can not get Allure report URL. Please check logs
++ RC=1
++ [[ xgroup != x\d\e\b\u\g ]]
++ [[ xTrue == x\F\a\l\s\e ]]
++ exit 1
+```
