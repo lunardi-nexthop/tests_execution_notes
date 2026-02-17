@@ -11,6 +11,24 @@ This corresponds to **TC-WARM-001** (VLAN Configuration Persistence) and **TC-WA
 
 ---
 
+## ⚠️ IMPORTANT: Pre-Flight Check Required
+
+**Before running this test**, you MUST verify and enable required warm restart components.
+
+👉 **See**: `WARM_RESTART_PREFLIGHT_CHECKLIST.md` for detailed instructions.
+
+**Quick Check**:
+```bash
+# On DUT - verify warm restart state
+show warm_restart state
+
+# CRITICAL: Ensure fdbsyncd is NOT disabled
+# If it shows "disabled", run:
+config warm_restart enable fdbsyncd
+```
+
+---
+
 ## 🔍 Assessment Based on sonic-mgmt Repository
 
 ### Key Files Found:
@@ -37,6 +55,11 @@ REBOOT_TYPE_WARM: {
 }
 ```
 
+4. **How Warm Reboot Tests Actually Work**:
+   - Tests use `warm-reboot` command directly (NOT `config warm_restart enable system`)
+   - The `warm-reboot` script handles enabling warm restart internally
+   - Tests check `WARM_RESTART_ENABLE_TABLE|system` in STATE_DB to verify warm restart state
+
 ---
 
 ## 🚀 Commands to Run Simple Warm Reboot Test
@@ -60,7 +83,7 @@ pytest arp/test_wr_arp.py \
 
 **What this test does**:
 - Continuously sends ARP requests to VLAN member ports
-- Initiates warm-reboot
+- Initiates warm-reboot using `warm-reboot` command
 - Expects to receive ARP replies throughout
 - Fails if no replies for >25 seconds on any VLAN member port
 
@@ -82,20 +105,47 @@ pytest arp/test_wr_arp.py \
 
 ### Option 2: Manual Test Procedure
 
-#### Step 1: Pre-Test Setup
+#### Step 1: Pre-Flight Check - Verify Warm Restart State
 ```bash
 # SSH to DUT
 ssh admin@<dut_ip>
 
-# Enable warm restart
-config warm_restart enable system
-config warm_restart enable swss
-config warm_restart enable teamd
+# Check current warm restart state
+show warm_restart state
 
-# Verify warm restart is enabled
-redis-cli -n 6 hget "WARM_RESTART_ENABLE_TABLE|system" enable
-# Should return: true
+# Expected output should show these components ENABLED (not "disabled"):
+# - vlanmgrd     ✅ (Critical for VLAN config persistence)
+# - fdbsyncd     ✅ (Critical for MAC address learning)
+# - portsyncd    ✅ (Important for port state)
+# - orchagent    ✅ (Critical for orchestration)
+# - syncd        ✅ (Critical for ASIC sync)
+```
 
+#### Step 2: Enable Required Components (If Disabled)
+```bash
+# CRITICAL: Enable fdbsyncd if it shows "disabled"
+# (Required for MAC address table persistence during warm-reboot)
+config warm_restart enable fdbsyncd
+
+# RECOMMENDED: Enable intfmgrd if it shows "disabled"
+# (Helps preserve interface configuration)
+config warm_restart enable intfmgrd
+
+# Verify changes took effect
+show warm_restart state
+
+# Should now show:
+# fdbsyncd     0  (no "disabled" - means enabled)
+# intfmgrd     0  (no "disabled" - means enabled)
+```
+
+**Note**: Based on analysis of sonic-mgmt test code:
+- The `warm-reboot` command handles system-level warm restart internally
+- You do NOT need to run `config warm_restart enable system`
+- Component-level warm restart (fdbsyncd, intfmgrd, etc.) must be enabled separately
+
+#### Step 3: VLAN Setup
+```bash
 # Create test VLAN (if not exists)
 config vlan add 100
 
@@ -109,7 +159,7 @@ redis-cli -n 4 keys "VLAN|*"
 redis-cli -n 4 keys "VLAN_MEMBER|*"
 ```
 
-#### Step 2: Start Traffic Generator
+#### Step 4: Start Traffic Generator
 ```bash
 # On PTF host or traffic generator
 # Generate continuous L2 traffic between the 2 ports
@@ -119,7 +169,7 @@ redis-cli -n 4 keys "VLAN_MEMBER|*"
 # This should be done from connected devices or PTF
 ```
 
-#### Step 3: Monitor Traffic (Before Reboot)
+#### Step 5: Monitor Traffic (Before Reboot)
 ```bash
 # On DUT - monitor interface counters
 show interfaces counters
@@ -129,15 +179,16 @@ watch -n 1 'show interfaces counters | grep -E "Ethernet0|Ethernet4"'
 show mac
 ```
 
-#### Step 4: Initiate Warm Reboot
+#### Step 6: Initiate Warm Reboot
 ```bash
 # On DUT
 warm-reboot
 
 # The system will reboot while maintaining data plane
+# The warm-reboot script handles enabling system-level warm restart
 ```
 
-#### Step 5: Monitor During Reboot (From Another Terminal)
+#### Step 7: Monitor During Reboot (From Another Terminal)
 ```bash
 # Monitor reconciliation status
 watch -n 1 'redis-cli -n 6 keys "WARM_RESTART_TABLE|*" | xargs -I {} redis-cli -n 6 hget {} state'
@@ -145,7 +196,7 @@ watch -n 1 'redis-cli -n 6 keys "WARM_RESTART_TABLE|*" | xargs -I {} redis-cli -
 # Expected states: initialized → restored → reconciled
 ```
 
-#### Step 6: Post-Reboot Verification
+#### Step 8: Post-Reboot Verification
 ```bash
 # After system comes back up
 
@@ -159,17 +210,25 @@ redis-cli -n 4 hgetall "VLAN_MEMBER|Vlan100|Ethernet4"
 redis-cli -n 6 hget "WARM_RESTART_TABLE|vlanmgrd" state
 # Should return: reconciled
 
-# 3. Check FDB entries preserved
+# 3. Verify fdbsyncd reconciled (CRITICAL for L2)
+redis-cli -n 6 hget "WARM_RESTART_TABLE|fdbsyncd" state
+# Should return: reconciled
+
+# 4. Check FDB entries preserved
 show mac
 # Compare with pre-reboot MAC table
 
-# 4. Verify traffic continuity
+# 5. Verify traffic continuity
 show interfaces counters
 # Check for packet loss
 
-# 5. Verify warm reboot cause
+# 6. Verify warm reboot cause
 show reboot-cause
 # Should show: warm-reboot
+
+# 7. Check all component reconciliation
+show warm_restart state
+# All enabled components should show restore_count > 0
 ```
 
 ---
@@ -181,14 +240,16 @@ show reboot-cause
 - ✅ Both ports (Ethernet0, Ethernet4) are members of VLAN 100
 - ✅ Port tagging mode preserved (untagged)
 - ✅ vlanmgrd state = "reconciled"
+- ✅ fdbsyncd state = "reconciled"
 - ✅ **Packet loss < 1%** during warm reboot
 - ✅ Traffic resumes immediately after reboot
 - ✅ FDB entries preserved (>95%)
 
 ### Should Pass (P1):
 - ✅ Reconciliation time < 5 minutes
-- ✅ No errors in syslog related to VLAN
+- ✅ No errors in syslog related to VLAN or FDB
 - ✅ Interface states preserved
+- ✅ All L2 components show restore_count incremented
 
 ---
 
@@ -252,9 +313,10 @@ cd /home/lunardi/workspace/private-sonic-mgmt/tests
 ### Pre-Test:
 - [ ] Testbed is accessible
 - [ ] DUT is in healthy state
+- [ ] **Warm restart state verified** (see WARM_RESTART_PREFLIGHT_CHECKLIST.md)
+- [ ] **fdbsyncd warm restart enabled** (CRITICAL)
 - [ ] VLAN configuration is clean
 - [ ] Traffic generator is ready
-- [ ] Warm restart is enabled
 
 ### During Test:
 - [ ] Traffic is flowing before reboot
@@ -264,6 +326,7 @@ cd /home/lunardi/workspace/private-sonic-mgmt/tests
 
 ### Post-Test:
 - [ ] VLAN configuration verified
+- [ ] FDB entries verified
 - [ ] Traffic resumed
 - [ ] Packet loss calculated
 - [ ] Logs collected
@@ -283,6 +346,25 @@ docker exec swss tail -100 /var/log/syslog | grep vlanmgrd
 
 # Check reconciliation state
 redis-cli -n 6 hgetall "WARM_RESTART_TABLE|vlanmgrd"
+
+# Check if vlanmgrd warm restart is enabled
+show warm_restart state | grep vlanmgrd
+```
+
+### If FDB Entries Lost (MAC Addresses):
+```bash
+# Check fdbsyncd state
+redis-cli -n 6 hgetall "WARM_RESTART_TABLE|fdbsyncd"
+
+# Check if fdbsyncd warm restart is enabled
+show warm_restart state | grep fdbsyncd
+# If it shows "disabled", this is the problem!
+
+# Enable it for next test
+config warm_restart enable fdbsyncd
+
+# Check FDB in ASIC_DB
+redis-cli -n 1 keys "ASIC_STATE:SAI_OBJECT_TYPE_FDB_ENTRY*"
 ```
 
 ### If Traffic Loss Exceeds Threshold:
@@ -298,6 +380,9 @@ show logging | grep -i error
 
 # Verify warm restart was actually performed
 show reboot-cause
+
+# Check which components failed reconciliation
+show warm_restart state
 ```
 
 ### If Reconciliation Stuck:
@@ -311,6 +396,9 @@ systemctl status warmboot-finalizer
 
 # Check logs
 journalctl -u warmboot-finalizer -n 100
+
+# Check specific component logs
+docker exec swss tail -200 /var/log/syslog | grep -E "vlanmgrd|fdbsyncd|orchagent"
 ```
 
 ---
@@ -321,21 +409,44 @@ From the test plan:
 - **TC-WARM-001**: VLAN Configuration Persistence
 - **TC-WARM-002**: VLAN Interface State Preservation
 - **TC-WARM-003**: VLAN Member Port Tagging Mode
-- **TC-WARM-010**: MAC Address Learning Persistence
+- **TC-WARM-010**: MAC Address Learning Persistence (requires fdbsyncd)
 - **TC-WARM-052**: Layer 2 Forwarding During Warm Reboot
 
 ---
 
 ## 🔗 References
 
-- Test Plan: `~/workspace/tests_execution_notes/warm_reboot/TEST_CASES_TABLE.md`
+- **Pre-Flight Checklist**: `WARM_RESTART_PREFLIGHT_CHECKLIST.md` ⭐ **START HERE**
+- Test Plan: `TEST_CASES_TABLE.md`
+- Detailed Test Plan: `warm_reboot_layer2_test_plan.md`
 - sonic-mgmt repo: `/home/lunardi/workspace/private-sonic-mgmt`
 - Reboot module: `tests/common/reboot.py`
 - VLAN tests: `tests/vlan/test_vlan.py`
 - Warm reboot ARP test: `tests/arp/test_wr_arp.py`
+- PTF warm reboot test: `ansible/roles/test/files/ptftests/py3/wr_arp.py`
 
 ---
 
-**Version**: 1.0  
+## 📌 Key Learnings from Code Analysis
+
+1. **The `warm-reboot` command is self-contained**:
+   - You don't need to run `config warm_restart enable system`
+   - The `warm-reboot` script handles system-level warm restart
+
+2. **Component-level warm restart must be enabled separately**:
+   - `config warm_restart enable fdbsyncd` - **CRITICAL for L2**
+   - `config warm_restart enable intfmgrd` - Recommended
+   - These are NOT enabled by `warm-reboot` command
+
+3. **Test verification**:
+   - Tests check `WARM_RESTART_ENABLE_TABLE|system` in STATE_DB
+   - Tests verify component reconciliation states
+   - Tests measure actual packet loss during reboot
+
+---
+
+**Version**: 2.0  
 **Created**: 2026-02-05  
-**Status**: Ready for Execution
+**Updated**: 2026-02-05  
+**Status**: Ready for Execution  
+**Based on**: Actual sonic-mgmt code analysis + system state verification
