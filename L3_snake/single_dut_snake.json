@@ -1,0 +1,801 @@
+{
+  "INTERFACE": {
+    "Ethernet0": {
+      "mac_addr": "00:00:00:ab:00:00",
+      "vrf_name": "Vrf1"
+    },
+    "Ethernet0|192.168.0.0/31": {},
+    "Ethernet8": {
+      "mac_addr": "00:00:00:ab:00:08",
+      "vrf_name": "Vrf1"
+    },
+    "Ethernet8|192.168.0.2/31": {},
+    "Ethernet16": {
+      "mac_addr": "00:00:00:ab:00:10",
+      "vrf_name": "Vrf2"
+    },
+    "Ethernet16|192.168.0.3/31": {},
+    "Ethernet24": {
+      "mac_addr": "00:00:00:ab:00:18",
+      "vrf_name": "Vrf2"
+    },
+    "Ethernet24|192.168.0.4/31": {},
+    "Ethernet32": {
+      "mac_addr": "00:00:00:ab:00:20",
+      "vrf_name": "Vrf3"
+    },
+    "Ethernet32|192.168.0.5/31": {},
+    "Ethernet40": {
+      "mac_addr": "00:00:00:ab:00:28",
+      "vrf_name": "Vrf3"
+    },
+    "Ethernet40|192.168.0.6/31": {},
+    "Ethernet48": {
+      "mac_addr": "00:00:00:ab:00:30",
+      "vrf_name": "Vrf4"
+    },
+    "Ethernet48|192.168.0.7/31": {},
+    "Ethernet56": {
+      "mac_addr": "00:00:00:ab:00:38",
+      "vrf_name": "Vrf4"
+    },
+    "Ethernet56|192.168.0.8/31": {},
+    "Ethernet64": {
+      "mac_addr": "00:00:00:ab:00:40",
+      "vrf_name": "Vrf5"
+    },
+    "Ethernet64|192.168.0.9/31": {},
+    "Ethernet72": {
+      "mac_addr": "00:00:00:ab:00:48",
+      "vrf_name": "Vrf5"
+    },
+    "Ethernet72|192.168.0.10/31": {},
+    "Ethernet80": {
+      "mac_addr": "00:00:00:ab:00:50",
+      "vrf_name": "Vrf6"
+    },
+    "Ethernet80|192.168.0.11/31": {},
+    "Ethernet88": {
+      "mac_addr": "00:00:00:ab:00:58",
+      "vrf_name": "Vrf6"
+    },
+    "Ethernet88|192.168.0.12/31": {},
+    "Ethernet96": {
+      "mac_addr": "00:00:00:ab:00:60",
+      "vrf_name": "Vrf7"
+    },
+    "Ethernet96|192.168.0.13/31": {},
+    "Ethernet104": {
+      "mac_addr": "00:00:00:ab:00:68",
+      "vrf_name": "Vrf7"
+    },
+    "Ethernet104|192.168.0.14/31": {},
+    "Ethernet112": {
+      "mac_addr": "00:00:00:ab:00:70",
+      "vrf_name": "Vrf8"
+    },
+    "Ethernet112|192.168.0.15/31": {},
+    "Ethernet120": {
+      "mac_addr": "00:00:00:ab:00:78",
+      "vrf_name": "Vrf8"
+    },
+    "Ethernet120|192.168.0.16/31": {},
+    "Ethernet128": {
+      "mac_addr": "00:00:00:ab:00:80",
+      "vrf_name": "Vrf9"
+    },
+    "Ethernet128|192.168.0.17/31": {},
+    "Ethernet136": {
+      "mac_addr": "00:00:00:ab:00:88",
+      "vrf_name": "Vrf9"
+    },
+    "Ethernet136|192.168.0.18/31": {},
+    "Ethernet144": {
+      "mac_addr": "00:00:00:ab:00:90",
+      "vrf_name": "Vrf10"
+    },
+    "Ethernet144|192.168.0.19/31": {},
+    "Ethernet152": {
+      "mac_addr": "00:00:00:ab:00:98",
+      "vrf_name": "Vrf10"
+    },
+    "Ethernet152|192.168.0.20/31": {},
+    "Ethernet160": {
+      "mac_addr": "00:00:00:ab:00:a0",
+      "vrf_name": "Vrf11"
+    },
+    "Ethernet160|192.168.0.21/31": {},
+    "Ethernet168": {
+      "mac_addr": "00:00:00:ab:00:a8",
+      "vrf_name": "Vrf11"
+    },
+    "Ethernet168|192.168.0.22/31": {},
+    "Ethernet176": {
+      "mac_addr": "00:00:00:ab:00:b0",
+      "vrf_name": "Vrf12"
+    },
+    "Ethernet176|192.168.0.23/31": {},
+    "Ethernet184": {
+      "mac_addr": "00:00:00:ab:00:b8",
+      "vrf_name": "Vrf12"
+    },
+    "Ethernet184|192.168.0.24/31": {},
+    "Ethernet192": {
+      "mac_addr": "00:00:00:ab:00:c0",
+      "vrf_name": "Vrf13"
+    },
+    "Ethernet192|192.168.0.25/31": {},
+    "Ethernet200": {
+      "mac_addr": "00:00:00:ab:00:c8",
+      "vrf_name": "Vrf13"
+    },
+    "Ethernet200|192.168.0.26/31": {},
+    "Ethernet208": {
+      "mac_addr": "00:00:00:ab:00:d0",
+      "vrf_name": "Vrf14"
+    },
+    "Ethernet208|192.168.0.27/31": {},
+    "Ethernet216": {
+      "mac_addr": "00:00:00:ab:00:d8",
+      "vrf_name": "Vrf14"
+    },
+    "Ethernet216|192.168.0.28/31": {},
+    "Ethernet224": {
+      "mac_addr": "00:00:00:ab:00:e0",
+      "vrf_name": "Vrf15"
+    },
+    "Ethernet224|192.168.0.29/31": {},
+    "Ethernet232": {
+      "mac_addr": "00:00:00:ab:00:e8",
+      "vrf_name": "Vrf15"
+    },
+    "Ethernet232|192.168.0.30/31": {},
+    "Ethernet240": {
+      "mac_addr": "00:00:00:ab:00:f0",
+      "vrf_name": "Vrf16"
+    },
+    "Ethernet240|192.168.0.31/31": {},
+    "Ethernet248": {
+      "mac_addr": "00:00:00:ab:00:f8",
+      "vrf_name": "Vrf16"
+    },
+    "Ethernet248|192.168.0.32/31": {},
+    "Ethernet256": {
+      "mac_addr": "00:00:00:ab:01:00",
+      "vrf_name": "Vrf17"
+    },
+    "Ethernet256|192.168.0.33/31": {},
+    "Ethernet264": {
+      "mac_addr": "00:00:00:ab:01:08",
+      "vrf_name": "Vrf17"
+    },
+    "Ethernet264|192.168.0.34/31": {},
+    "Ethernet272": {
+      "mac_addr": "00:00:00:ab:01:10",
+      "vrf_name": "Vrf18"
+    },
+    "Ethernet272|192.168.0.35/31": {},
+    "Ethernet280": {
+      "mac_addr": "00:00:00:ab:01:18",
+      "vrf_name": "Vrf18"
+    },
+    "Ethernet280|192.168.0.36/31": {},
+    "Ethernet288": {
+      "mac_addr": "00:00:00:ab:01:20",
+      "vrf_name": "Vrf19"
+    },
+    "Ethernet288|192.168.0.37/31": {},
+    "Ethernet296": {
+      "mac_addr": "00:00:00:ab:01:28",
+      "vrf_name": "Vrf19"
+    },
+    "Ethernet296|192.168.0.38/31": {},
+    "Ethernet304": {
+      "mac_addr": "00:00:00:ab:01:30",
+      "vrf_name": "Vrf20"
+    },
+    "Ethernet304|192.168.0.39/31": {},
+    "Ethernet312": {
+      "mac_addr": "00:00:00:ab:01:38",
+      "vrf_name": "Vrf20"
+    },
+    "Ethernet312|192.168.0.40/31": {},
+    "Ethernet320": {
+      "mac_addr": "00:00:00:ab:01:40",
+      "vrf_name": "Vrf21"
+    },
+    "Ethernet320|192.168.0.41/31": {},
+    "Ethernet328": {
+      "mac_addr": "00:00:00:ab:01:48",
+      "vrf_name": "Vrf21"
+    },
+    "Ethernet328|192.168.0.42/31": {},
+    "Ethernet336": {
+      "mac_addr": "00:00:00:ab:01:50",
+      "vrf_name": "Vrf22"
+    },
+    "Ethernet336|192.168.0.43/31": {},
+    "Ethernet344": {
+      "mac_addr": "00:00:00:ab:01:58",
+      "vrf_name": "Vrf22"
+    },
+    "Ethernet344|192.168.0.44/31": {},
+    "Ethernet352": {
+      "mac_addr": "00:00:00:ab:01:60",
+      "vrf_name": "Vrf23"
+    },
+    "Ethernet352|192.168.0.45/31": {},
+    "Ethernet360": {
+      "mac_addr": "00:00:00:ab:01:68",
+      "vrf_name": "Vrf23"
+    },
+    "Ethernet360|192.168.0.46/31": {},
+    "Ethernet368": {
+      "mac_addr": "00:00:00:ab:01:70",
+      "vrf_name": "Vrf24"
+    },
+    "Ethernet368|192.168.0.47/31": {},
+    "Ethernet376": {
+      "mac_addr": "00:00:00:ab:01:78",
+      "vrf_name": "Vrf24"
+    },
+    "Ethernet376|192.168.0.48/31": {},
+    "Ethernet384": {
+      "mac_addr": "00:00:00:ab:01:80",
+      "vrf_name": "Vrf25"
+    },
+    "Ethernet384|192.168.0.49/31": {},
+    "Ethernet392": {
+      "mac_addr": "00:00:00:ab:01:88",
+      "vrf_name": "Vrf25"
+    },
+    "Ethernet392|192.168.0.50/31": {},
+    "Ethernet400": {
+      "mac_addr": "00:00:00:ab:01:90",
+      "vrf_name": "Vrf26"
+    },
+    "Ethernet400|192.168.0.51/31": {},
+    "Ethernet408": {
+      "mac_addr": "00:00:00:ab:01:98",
+      "vrf_name": "Vrf26"
+    },
+    "Ethernet408|192.168.0.52/31": {},
+    "Ethernet416": {
+      "mac_addr": "00:00:00:ab:01:a0",
+      "vrf_name": "Vrf27"
+    },
+    "Ethernet416|192.168.0.53/31": {},
+    "Ethernet424": {
+      "mac_addr": "00:00:00:ab:01:a8",
+      "vrf_name": "Vrf27"
+    },
+    "Ethernet424|192.168.0.54/31": {},
+    "Ethernet432": {
+      "mac_addr": "00:00:00:ab:01:b0",
+      "vrf_name": "Vrf28"
+    },
+    "Ethernet432|192.168.0.55/31": {},
+    "Ethernet440": {
+      "mac_addr": "00:00:00:ab:01:b8",
+      "vrf_name": "Vrf28"
+    },
+    "Ethernet440|192.168.0.56/31": {},
+    "Ethernet448": {
+      "mac_addr": "00:00:00:ab:01:c0",
+      "vrf_name": "Vrf29"
+    },
+    "Ethernet448|192.168.0.57/31": {},
+    "Ethernet456": {
+      "mac_addr": "00:00:00:ab:01:c8",
+      "vrf_name": "Vrf29"
+    },
+    "Ethernet456|192.168.0.58/31": {},
+    "Ethernet464": {
+      "mac_addr": "00:00:00:ab:01:d0",
+      "vrf_name": "Vrf30"
+    },
+    "Ethernet464|192.168.0.59/31": {},
+    "Ethernet472": {
+      "mac_addr": "00:00:00:ab:01:d8",
+      "vrf_name": "Vrf30"
+    },
+    "Ethernet472|192.168.0.60/31": {},
+    "Ethernet480": {
+      "mac_addr": "00:00:00:ab:01:e0",
+      "vrf_name": "Vrf31"
+    },
+    "Ethernet480|192.168.0.61/31": {},
+    "Ethernet488": {
+      "mac_addr": "00:00:00:ab:01:e8",
+      "vrf_name": "Vrf31"
+    },
+    "Ethernet488|192.168.0.62/31": {},
+    "Ethernet496": {
+      "mac_addr": "00:00:00:ab:01:f0",
+      "vrf_name": "Vrf32"
+    },
+    "Ethernet496|192.168.0.63/31": {},
+    "Ethernet504": {
+      "mac_addr": "00:00:00:ab:01:f8",
+      "vrf_name": "Vrf32"
+    },
+    "Ethernet504|192.168.0.64/31": {}
+  },
+  "VRF": {
+    "Vrf1": {},
+    "Vrf2": {},
+    "Vrf3": {},
+    "Vrf4": {},
+    "Vrf5": {},
+    "Vrf6": {},
+    "Vrf7": {},
+    "Vrf8": {},
+    "Vrf9": {},
+    "Vrf10": {},
+    "Vrf11": {},
+    "Vrf12": {},
+    "Vrf13": {},
+    "Vrf14": {},
+    "Vrf15": {},
+    "Vrf16": {},
+    "Vrf17": {},
+    "Vrf18": {},
+    "Vrf19": {},
+    "Vrf20": {},
+    "Vrf21": {},
+    "Vrf22": {},
+    "Vrf23": {},
+    "Vrf24": {},
+    "Vrf25": {},
+    "Vrf26": {},
+    "Vrf27": {},
+    "Vrf28": {},
+    "Vrf29": {},
+    "Vrf30": {},
+    "Vrf31": {},
+    "Vrf32": {}
+  },
+  "STATIC_ROUTE": {
+    "Vrf1|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet8",
+      "nexthop": "192.168.0.3",
+      "nexthop-vrf": "Vrf1"
+    },
+    "Vrf2|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet16",
+      "nexthop": "192.168.0.2",
+      "nexthop-vrf": "Vrf2"
+    },
+    "Vrf2|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet24",
+      "nexthop": "192.168.0.5",
+      "nexthop-vrf": "Vrf2"
+    },
+    "Vrf3|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet32",
+      "nexthop": "192.168.0.4",
+      "nexthop-vrf": "Vrf3"
+    },
+    "Vrf3|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet40",
+      "nexthop": "192.168.0.7",
+      "nexthop-vrf": "Vrf3"
+    },
+    "Vrf4|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet48",
+      "nexthop": "192.168.0.6",
+      "nexthop-vrf": "Vrf4"
+    },
+    "Vrf4|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet56",
+      "nexthop": "192.168.0.9",
+      "nexthop-vrf": "Vrf4"
+    },
+    "Vrf5|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet64",
+      "nexthop": "192.168.0.8",
+      "nexthop-vrf": "Vrf5"
+    },
+    "Vrf5|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet72",
+      "nexthop": "192.168.0.11",
+      "nexthop-vrf": "Vrf5"
+    },
+    "Vrf6|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet80",
+      "nexthop": "192.168.0.10",
+      "nexthop-vrf": "Vrf6"
+    },
+    "Vrf6|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet88",
+      "nexthop": "192.168.0.13",
+      "nexthop-vrf": "Vrf6"
+    },
+    "Vrf7|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet96",
+      "nexthop": "192.168.0.12",
+      "nexthop-vrf": "Vrf7"
+    },
+    "Vrf7|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet104",
+      "nexthop": "192.168.0.15",
+      "nexthop-vrf": "Vrf7"
+    },
+    "Vrf8|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet112",
+      "nexthop": "192.168.0.14",
+      "nexthop-vrf": "Vrf8"
+    },
+    "Vrf8|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet120",
+      "nexthop": "192.168.0.17",
+      "nexthop-vrf": "Vrf8"
+    },
+    "Vrf9|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet128",
+      "nexthop": "192.168.0.16",
+      "nexthop-vrf": "Vrf9"
+    },
+    "Vrf9|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet136",
+      "nexthop": "192.168.0.19",
+      "nexthop-vrf": "Vrf9"
+    },
+    "Vrf10|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet144",
+      "nexthop": "192.168.0.18",
+      "nexthop-vrf": "Vrf10"
+    },
+    "Vrf10|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet152",
+      "nexthop": "192.168.0.21",
+      "nexthop-vrf": "Vrf10"
+    },
+    "Vrf11|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet160",
+      "nexthop": "192.168.0.20",
+      "nexthop-vrf": "Vrf11"
+    },
+    "Vrf11|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet168",
+      "nexthop": "192.168.0.23",
+      "nexthop-vrf": "Vrf11"
+    },
+    "Vrf12|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet176",
+      "nexthop": "192.168.0.22",
+      "nexthop-vrf": "Vrf12"
+    },
+    "Vrf12|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet184",
+      "nexthop": "192.168.0.25",
+      "nexthop-vrf": "Vrf12"
+    },
+    "Vrf13|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet192",
+      "nexthop": "192.168.0.24",
+      "nexthop-vrf": "Vrf13"
+    },
+    "Vrf13|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet200",
+      "nexthop": "192.168.0.27",
+      "nexthop-vrf": "Vrf13"
+    },
+    "Vrf14|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet208",
+      "nexthop": "192.168.0.26",
+      "nexthop-vrf": "Vrf14"
+    },
+    "Vrf14|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet216",
+      "nexthop": "192.168.0.29",
+      "nexthop-vrf": "Vrf14"
+    },
+    "Vrf15|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet224",
+      "nexthop": "192.168.0.28",
+      "nexthop-vrf": "Vrf15"
+    },
+    "Vrf15|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet232",
+      "nexthop": "192.168.0.31",
+      "nexthop-vrf": "Vrf15"
+    },
+    "Vrf16|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet240",
+      "nexthop": "192.168.0.30",
+      "nexthop-vrf": "Vrf16"
+    },
+    "Vrf16|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet248",
+      "nexthop": "192.168.0.33",
+      "nexthop-vrf": "Vrf16"
+    },
+    "Vrf17|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet256",
+      "nexthop": "192.168.0.32",
+      "nexthop-vrf": "Vrf17"
+    },
+    "Vrf17|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet264",
+      "nexthop": "192.168.0.35",
+      "nexthop-vrf": "Vrf17"
+    },
+    "Vrf18|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet272",
+      "nexthop": "192.168.0.34",
+      "nexthop-vrf": "Vrf18"
+    },
+    "Vrf18|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet280",
+      "nexthop": "192.168.0.37",
+      "nexthop-vrf": "Vrf18"
+    },
+    "Vrf19|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet288",
+      "nexthop": "192.168.0.36",
+      "nexthop-vrf": "Vrf19"
+    },
+    "Vrf19|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet296",
+      "nexthop": "192.168.0.39",
+      "nexthop-vrf": "Vrf19"
+    },
+    "Vrf20|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet304",
+      "nexthop": "192.168.0.38",
+      "nexthop-vrf": "Vrf20"
+    },
+    "Vrf20|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet312",
+      "nexthop": "192.168.0.41",
+      "nexthop-vrf": "Vrf20"
+    },
+    "Vrf21|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet320",
+      "nexthop": "192.168.0.40",
+      "nexthop-vrf": "Vrf21"
+    },
+    "Vrf21|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet328",
+      "nexthop": "192.168.0.43",
+      "nexthop-vrf": "Vrf21"
+    },
+    "Vrf22|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet336",
+      "nexthop": "192.168.0.42",
+      "nexthop-vrf": "Vrf22"
+    },
+    "Vrf22|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet344",
+      "nexthop": "192.168.0.45",
+      "nexthop-vrf": "Vrf22"
+    },
+    "Vrf23|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet352",
+      "nexthop": "192.168.0.44",
+      "nexthop-vrf": "Vrf23"
+    },
+    "Vrf23|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet360",
+      "nexthop": "192.168.0.47",
+      "nexthop-vrf": "Vrf23"
+    },
+    "Vrf24|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet368",
+      "nexthop": "192.168.0.46",
+      "nexthop-vrf": "Vrf24"
+    },
+    "Vrf24|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet376",
+      "nexthop": "192.168.0.49",
+      "nexthop-vrf": "Vrf24"
+    },
+    "Vrf25|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet384",
+      "nexthop": "192.168.0.48",
+      "nexthop-vrf": "Vrf25"
+    },
+    "Vrf25|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet392",
+      "nexthop": "192.168.0.51",
+      "nexthop-vrf": "Vrf25"
+    },
+    "Vrf26|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet400",
+      "nexthop": "192.168.0.50",
+      "nexthop-vrf": "Vrf26"
+    },
+    "Vrf26|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet408",
+      "nexthop": "192.168.0.53",
+      "nexthop-vrf": "Vrf26"
+    },
+    "Vrf27|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet416",
+      "nexthop": "192.168.0.52",
+      "nexthop-vrf": "Vrf27"
+    },
+    "Vrf27|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet424",
+      "nexthop": "192.168.0.55",
+      "nexthop-vrf": "Vrf27"
+    },
+    "Vrf28|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet432",
+      "nexthop": "192.168.0.54",
+      "nexthop-vrf": "Vrf28"
+    },
+    "Vrf28|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet440",
+      "nexthop": "192.168.0.57",
+      "nexthop-vrf": "Vrf28"
+    },
+    "Vrf29|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet448",
+      "nexthop": "192.168.0.56",
+      "nexthop-vrf": "Vrf29"
+    },
+    "Vrf29|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet456",
+      "nexthop": "192.168.0.59",
+      "nexthop-vrf": "Vrf29"
+    },
+    "Vrf30|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet464",
+      "nexthop": "192.168.0.58",
+      "nexthop-vrf": "Vrf30"
+    },
+    "Vrf30|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet472",
+      "nexthop": "192.168.0.61",
+      "nexthop-vrf": "Vrf30"
+    },
+    "Vrf31|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet480",
+      "nexthop": "192.168.0.60",
+      "nexthop-vrf": "Vrf31"
+    },
+    "Vrf31|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet488",
+      "nexthop": "192.168.0.63",
+      "nexthop-vrf": "Vrf31"
+    },
+    "Vrf32|192.168.0.0/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet496",
+      "nexthop": "192.168.0.62",
+      "nexthop-vrf": "Vrf32"
+    },
+    "Vrf32|192.168.0.64/31": {
+      "blackhole": "false",
+      "distance": "0",
+      "ifname": "Ethernet504",
+      "nexthop": "192.168.0.65",
+      "nexthop-vrf": "Vrf32"
+    }
+  }
+}
