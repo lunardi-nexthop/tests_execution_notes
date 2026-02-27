@@ -324,6 +324,10 @@ Examples:
   # Multiple sub-interfaces with auto-increment
   %(prog)s --parent-interface Ethernet0 --start-vlan-id 100 --start-ip 10.0.0.1/31 --count 5 --vrf-name Vrf1
 
+  # Multiple interfaces with 3rd octet increment (Eth384: 10.0.0.x, Eth386: 10.0.1.x, Eth388: 10.0.2.x)
+  %(prog)s --parent-interface-list Ethernet384,Ethernet386,Ethernet388 --start-vlan-id 100 \\
+           --start-ip 10.0.0.1/31 --count 3 --vrf-list Vrf1,Vrf2,Vrf3 --ip-octet3-increment
+
   # Using config file
   %(prog)s --config my_config.yaml
 
@@ -355,7 +359,9 @@ Examples:
     bulk_group.add_argument('--start-ip', help='Starting IP address with prefix (e.g., 10.0.0.1/31)')
     bulk_group.add_argument('--count', type=int, default=1, help='Number of sub-interfaces to create per parent interface')
     bulk_group.add_argument('--vlan-increment', type=int, default=1, help='VLAN ID increment (default: 1)')
-    bulk_group.add_argument('--ip-increment', type=int, default=2, help='IP increment (default: 2 for /31)')
+    bulk_group.add_argument('--ip-increment', type=int, default=2, help='IP increment within same interface (default: 2 for /31)')
+    bulk_group.add_argument('--ip-octet3-increment', action='store_true',
+                           help='Increment 3rd octet by 1 for each parent interface (e.g., 10.0.0.1 -> 10.0.1.1)')
     bulk_group.add_argument('--vrf-list', help='Comma-separated list of VRF names (e.g., Vrf1,Vrf2,Vrf3)')
     bulk_group.add_argument('--vrf-prefix', help='VRF name prefix for auto-generation (e.g., Vrf)')
     bulk_group.add_argument('--vrf-start-number', type=int, default=1, help='Starting number for VRF auto-generation (default: 1)')
@@ -424,6 +430,13 @@ Examples:
         global_ip_offset = 0
         global_vrf_counter = args.vrf_start_number
 
+        # Parse base IP address into octets
+        base_ip_parts = str(ip_addr).split('.')
+        base_octet1 = int(base_ip_parts[0])
+        base_octet2 = int(base_ip_parts[1])
+        base_octet3 = int(base_ip_parts[2])
+        base_octet4 = int(base_ip_parts[3])
+
         # Process each parent interface
         for parent_idx, parent_interface in enumerate(parent_interfaces):
             # Determine VRF names for each sub-interface on this parent
@@ -456,7 +469,18 @@ Examples:
             # Create multiple sub-interfaces for this parent
             for i in range(args.count):
                 vlan_id = args.start_vlan_id + (i * args.vlan_increment)
-                current_ip = ip_addr + global_ip_offset
+
+                # Calculate IP address
+                if args.ip_octet3_increment:
+                    # Increment 3rd octet for each parent interface
+                    # Keep 4th octet pattern based on VRF index
+                    current_octet3 = base_octet3 + parent_idx
+                    current_octet4 = base_octet4 + (i * args.ip_increment)
+                    current_ip = f"{base_octet1}.{base_octet2}.{current_octet3}.{current_octet4}"
+                else:
+                    # Original behavior: simple linear increment
+                    current_ip = ip_addr + global_ip_offset
+
                 ip_with_prefix = f"{current_ip}/{prefix_len}"
 
                 configurator.add_sub_interface(
@@ -468,7 +492,8 @@ Examples:
                     admin_status=args.admin_status
                 )
 
-                global_ip_offset += args.ip_increment
+                if not args.ip_octet3_increment:
+                    global_ip_offset += args.ip_increment
     else:
         parser.print_help()
         sys.exit(1)

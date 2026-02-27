@@ -124,7 +124,8 @@ python configure_vrf_subinterfaces.py --config example_subinterfaces.json
 | `--start-ip` | ✅ Yes | Starting IP address with prefix | `10.0.0.1/31` |
 | `--count` | ❌ No | Number of sub-interfaces per parent (default: 1) | `5` |
 | `--vlan-increment` | ❌ No | VLAN ID increment (default: 1) | `1`, `10` |
-| `--ip-increment` | ❌ No | IP increment (default: 2 for /31) | `2`, `4` |
+| `--ip-increment` | ❌ No | IP increment within same interface (default: 2 for /31) | `2`, `4` |
+| `--ip-octet3-increment` | ❌ No | Increment 3rd octet by 1 for each parent interface | flag |
 | `--vrf-name` | ❌ No | Single VRF for all sub-interfaces | `Vrf1` |
 | `--vrf-list` | ❌ No | Comma-separated VRF names | `Vrf1,Vrf2,Vrf3` |
 | `--vrf-prefix` | ❌ No | VRF name prefix for auto-generation | `Vrf` |
@@ -250,7 +251,28 @@ python configure_vrf_subinterfaces.py \
   --vrf-list Vrf1,Vrf2,Vrf3
 ```
 
-### Example 5: Dual-Stack (IPv4 + IPv6) - Using Config File
+### Example 5: Multiple Interfaces with 3rd Octet Increment
+
+```bash
+# Create sub-interfaces where 3rd octet increments per interface
+# Ethernet384: 10.0.0.x, Ethernet386: 10.0.1.x, Ethernet388: 10.0.2.x
+python configure_vrf_subinterfaces.py \
+  --parent-interface-list Ethernet384,Ethernet386,Ethernet388 \
+  --start-vlan-id 100 \
+  --start-ip 10.0.0.1/31 \
+  --count 3 \
+  --vrf-list Vrf1,Vrf2,Vrf3 \
+  --ip-octet3-increment
+```
+
+**Result:**
+- **Ethernet384**: Vrf1=10.0.0.1/31, Vrf2=10.0.0.3/31, Vrf3=10.0.0.5/31
+- **Ethernet386**: Vrf1=10.0.1.1/31, Vrf2=10.0.1.3/31, Vrf3=10.0.1.5/31
+- **Ethernet388**: Vrf1=10.0.2.1/31, Vrf2=10.0.2.3/31, Vrf3=10.0.2.5/31
+
+The 3rd octet increments by 1 for each interface, while the 4th octet increments by 2 (for /31) for each VRF within the same interface.
+
+### Example 6: Dual-Stack (IPv4 + IPv6) - Using Config File
 
 ```yaml
 sub_interfaces:
@@ -265,7 +287,7 @@ sub_interfaces:
 python configure_vrf_subinterfaces.py --config dual_stack.yaml
 ```
 
-### Example 6: PortChannel Sub-Interfaces
+### Example 7: PortChannel Sub-Interfaces
 
 ```bash
 python configure_vrf_subinterfaces.py \
