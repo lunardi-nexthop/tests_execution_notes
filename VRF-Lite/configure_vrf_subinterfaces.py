@@ -328,6 +328,11 @@ Examples:
   %(prog)s --parent-interface-list Ethernet384,Ethernet386,Ethernet388 --start-vlan-id 100 \\
            --start-ip 10.0.0.1/31 --count 3 --vrf-list Vrf1,Vrf2,Vrf3 --ip-octet3-increment
 
+  # Dual-stack with IPv6 segment increment (Eth384: fc00:0:0::x, Eth386: fc00:0:1::x)
+  %(prog)s --parent-interface-list Ethernet384,Ethernet386 --start-vlan-id 100 \\
+           --start-ip 10.0.0.1/31 --start-ipv6 fc00:0:0::1/64 --count 3 \\
+           --vrf-list Vrf1,Vrf2,Vrf3 --ip-octet3-increment --ipv6-segment-increment
+
   # Using config file
   %(prog)s --config my_config.yaml
 
@@ -357,11 +362,15 @@ Examples:
     bulk_group = parser.add_argument_group('Bulk Configuration (auto-increment)')
     bulk_group.add_argument('--start-vlan-id', type=int, help='Starting VLAN ID')
     bulk_group.add_argument('--start-ip', help='Starting IP address with prefix (e.g., 10.0.0.1/31)')
+    bulk_group.add_argument('--start-ipv6', help='Starting IPv6 address with prefix (e.g., fc00::1/64)')
     bulk_group.add_argument('--count', type=int, default=1, help='Number of sub-interfaces to create per parent interface')
     bulk_group.add_argument('--vlan-increment', type=int, default=1, help='VLAN ID increment (default: 1)')
     bulk_group.add_argument('--ip-increment', type=int, default=2, help='IP increment within same interface (default: 2 for /31)')
+    bulk_group.add_argument('--ipv6-increment', type=int, default=1, help='IPv6 increment within same interface (default: 1)')
     bulk_group.add_argument('--ip-octet3-increment', action='store_true',
                            help='Increment 3rd octet by 1 for each parent interface (e.g., 10.0.0.1 -> 10.0.1.1)')
+    bulk_group.add_argument('--ipv6-segment-increment', action='store_true',
+                           help='Increment IPv6 segment by 1 for each parent interface (e.g., fc00:0:0::1 -> fc00:0:1::1)')
     bulk_group.add_argument('--vrf-list', help='Comma-separated list of VRF names (e.g., Vrf1,Vrf2,Vrf3)')
     bulk_group.add_argument('--vrf-prefix', help='VRF name prefix for auto-generation (e.g., Vrf)')
     bulk_group.add_argument('--vrf-start-number', type=int, default=1, help='Starting number for VRF auto-generation (default: 1)')
@@ -406,18 +415,45 @@ Examples:
             ipv6_address=args.ipv6_address,
             admin_status=args.admin_status
         )
-    elif (args.parent_interface or args.parent_interface_list) and args.start_vlan_id and args.start_ip:
+    elif (args.parent_interface or args.parent_interface_list) and args.start_vlan_id and (args.start_ip or args.start_ipv6):
         # Bulk mode with auto-increment
         import ipaddress
 
-        # Parse starting IP
-        try:
-            ip_network = ipaddress.ip_network(args.start_ip, strict=False)
-            ip_addr = ipaddress.ip_address(args.start_ip.split('/')[0])
-            prefix_len = args.start_ip.split('/')[1]
-        except Exception as e:
-            print(f"Error parsing IP address: {e}")
-            sys.exit(1)
+        # Parse starting IPv4 if provided
+        ip_addr = None
+        prefix_len = None
+        base_octet1 = base_octet2 = base_octet3 = base_octet4 = 0
+
+        if args.start_ip:
+            try:
+                ip_network = ipaddress.ip_network(args.start_ip, strict=False)
+                ip_addr = ipaddress.ip_address(args.start_ip.split('/')[0])
+                prefix_len = args.start_ip.split('/')[1]
+
+                # Parse base IP address into octets
+                base_ip_parts = str(ip_addr).split('.')
+                base_octet1 = int(base_ip_parts[0])
+                base_octet2 = int(base_ip_parts[1])
+                base_octet3 = int(base_ip_parts[2])
+                base_octet4 = int(base_ip_parts[3])
+            except Exception as e:
+                print(f"Error parsing IPv4 address: {e}")
+                sys.exit(1)
+
+        # Parse starting IPv6 if provided
+        ipv6_addr = None
+        ipv6_prefix_len = None
+        base_ipv6_int = 0
+
+        if args.start_ipv6:
+            try:
+                ipv6_network = ipaddress.ip_network(args.start_ipv6, strict=False)
+                ipv6_addr = ipaddress.ip_address(args.start_ipv6.split('/')[0])
+                ipv6_prefix_len = args.start_ipv6.split('/')[1]
+                base_ipv6_int = int(ipv6_addr)
+            except Exception as e:
+                print(f"Error parsing IPv6 address: {e}")
+                sys.exit(1)
 
         # Get list of parent interfaces
         parent_interfaces = []
@@ -428,14 +464,8 @@ Examples:
 
         # Track global IP and VRF counter
         global_ip_offset = 0
+        global_ipv6_offset = 0
         global_vrf_counter = args.vrf_start_number
-
-        # Parse base IP address into octets
-        base_ip_parts = str(ip_addr).split('.')
-        base_octet1 = int(base_ip_parts[0])
-        base_octet2 = int(base_ip_parts[1])
-        base_octet3 = int(base_ip_parts[2])
-        base_octet4 = int(base_ip_parts[3])
 
         # Process each parent interface
         for parent_idx, parent_interface in enumerate(parent_interfaces):
@@ -470,30 +500,53 @@ Examples:
             for i in range(args.count):
                 vlan_id = args.start_vlan_id + (i * args.vlan_increment)
 
-                # Calculate IP address
-                if args.ip_octet3_increment:
-                    # Increment 3rd octet for each parent interface
-                    # Keep 4th octet pattern based on VRF index
-                    current_octet3 = base_octet3 + parent_idx
-                    current_octet4 = base_octet4 + (i * args.ip_increment)
-                    current_ip = f"{base_octet1}.{base_octet2}.{current_octet3}.{current_octet4}"
-                else:
-                    # Original behavior: simple linear increment
-                    current_ip = ip_addr + global_ip_offset
+                # Calculate IPv4 address
+                ip_with_prefix = None
+                if args.start_ip:
+                    if args.ip_octet3_increment:
+                        # Increment 3rd octet for each parent interface
+                        # Keep 4th octet pattern based on VRF index
+                        current_octet3 = base_octet3 + parent_idx
+                        current_octet4 = base_octet4 + (i * args.ip_increment)
+                        current_ip = f"{base_octet1}.{base_octet2}.{current_octet3}.{current_octet4}"
+                    else:
+                        # Original behavior: simple linear increment
+                        current_ip = ip_addr + global_ip_offset
 
-                ip_with_prefix = f"{current_ip}/{prefix_len}"
+                    ip_with_prefix = f"{current_ip}/{prefix_len}"
+
+                # Calculate IPv6 address
+                ipv6_with_prefix = None
+                if args.start_ipv6:
+                    if args.ipv6_segment_increment:
+                        # Increment IPv6 by shifting the segment
+                        # For fc00:0:0::1, increment to fc00:0:1::1, fc00:0:2::1, etc.
+                        # We increment by 2^64 (one full segment) per parent interface
+                        segment_shift = parent_idx * (2 ** 64)
+                        host_offset = i * args.ipv6_increment
+                        current_ipv6_int = base_ipv6_int + segment_shift + host_offset
+                        current_ipv6 = ipaddress.IPv6Address(current_ipv6_int)
+                    else:
+                        # Original behavior: simple linear increment
+                        current_ipv6_int = base_ipv6_int + global_ipv6_offset
+                        current_ipv6 = ipaddress.IPv6Address(current_ipv6_int)
+
+                    ipv6_with_prefix = f"{current_ipv6}/{ipv6_prefix_len}"
 
                 configurator.add_sub_interface(
                     parent_interface=parent_interface,
                     vlan_id=vlan_id,
                     ip_address=ip_with_prefix,
                     vrf_name=vrf_names[i],
-                    ipv6_address=None,
+                    ipv6_address=ipv6_with_prefix,
                     admin_status=args.admin_status
                 )
 
-                if not args.ip_octet3_increment:
+                if not args.ip_octet3_increment and args.start_ip:
                     global_ip_offset += args.ip_increment
+
+                if not args.ipv6_segment_increment and args.start_ipv6:
+                    global_ipv6_offset += args.ipv6_increment
     else:
         parser.print_help()
         sys.exit(1)

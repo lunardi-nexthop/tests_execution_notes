@@ -121,11 +121,14 @@ python configure_vrf_subinterfaces.py --config example_subinterfaces.json
 | `--parent-interface` | One required | Single parent interface | `Ethernet0` |
 | `--parent-interface-list` | One required | Comma-separated parent interfaces | `Ethernet384,Ethernet386` |
 | `--start-vlan-id` | ✅ Yes | Starting VLAN ID | `100` |
-| `--start-ip` | ✅ Yes | Starting IP address with prefix | `10.0.0.1/31` |
+| `--start-ip` | One required | Starting IPv4 address with prefix | `10.0.0.1/31` |
+| `--start-ipv6` | One required | Starting IPv6 address with prefix | `fc00:0:0::1/64` |
 | `--count` | ❌ No | Number of sub-interfaces per parent (default: 1) | `5` |
 | `--vlan-increment` | ❌ No | VLAN ID increment (default: 1) | `1`, `10` |
-| `--ip-increment` | ❌ No | IP increment within same interface (default: 2 for /31) | `2`, `4` |
-| `--ip-octet3-increment` | ❌ No | Increment 3rd octet by 1 for each parent interface | flag |
+| `--ip-increment` | ❌ No | IPv4 increment within same interface (default: 2 for /31) | `2`, `4` |
+| `--ipv6-increment` | ❌ No | IPv6 increment within same interface (default: 1) | `1`, `2` |
+| `--ip-octet3-increment` | ❌ No | Increment IPv4 3rd octet by 1 for each parent interface | flag |
+| `--ipv6-segment-increment` | ❌ No | Increment IPv6 segment by 1 for each parent interface | flag |
 | `--vrf-name` | ❌ No | Single VRF for all sub-interfaces | `Vrf1` |
 | `--vrf-list` | ❌ No | Comma-separated VRF names | `Vrf1,Vrf2,Vrf3` |
 | `--vrf-prefix` | ❌ No | VRF name prefix for auto-generation | `Vrf` |
@@ -272,7 +275,38 @@ python configure_vrf_subinterfaces.py \
 
 The 3rd octet increments by 1 for each interface, while the 4th octet increments by 2 (for /31) for each VRF within the same interface.
 
-### Example 6: Dual-Stack (IPv4 + IPv6) - Using Config File
+### Example 6: Dual-Stack with IPv6 Segment Increment
+
+```bash
+# Create dual-stack sub-interfaces with both IPv4 and IPv6 segment increment
+python configure_vrf_subinterfaces.py \
+  --parent-interface-list Ethernet384,Ethernet386,Ethernet388 \
+  --start-vlan-id 100 \
+  --start-ip 10.0.0.1/31 \
+  --start-ipv6 fc00:0:0::1/64 \
+  --count 3 \
+  --vrf-list Vrf1,Vrf2,Vrf3 \
+  --ip-octet3-increment \
+  --ipv6-segment-increment
+```
+
+**Result:**
+- **Ethernet384**:
+  - Vrf1: IPv4=10.0.0.1/31, IPv6=fc00::1/64
+  - Vrf2: IPv4=10.0.0.3/31, IPv6=fc00::2/64
+  - Vrf3: IPv4=10.0.0.5/31, IPv6=fc00::3/64
+- **Ethernet386**:
+  - Vrf1: IPv4=10.0.1.1/31, IPv6=fc00:0:0:1::1/64
+  - Vrf2: IPv4=10.0.1.3/31, IPv6=fc00:0:0:1::2/64
+  - Vrf3: IPv4=10.0.1.5/31, IPv6=fc00:0:0:1::3/64
+- **Ethernet388**:
+  - Vrf1: IPv4=10.0.2.1/31, IPv6=fc00:0:0:2::1/64
+  - Vrf2: IPv4=10.0.2.3/31, IPv6=fc00:0:0:2::2/64
+  - Vrf3: IPv4=10.0.2.5/31, IPv6=fc00:0:0:2::3/64
+
+The IPv4 3rd octet and IPv6 segment both increment by 1 for each parent interface.
+
+### Example 7: Dual-Stack (IPv4 + IPv6) - Using Config File
 
 ```yaml
 sub_interfaces:
@@ -287,7 +321,7 @@ sub_interfaces:
 python configure_vrf_subinterfaces.py --config dual_stack.yaml
 ```
 
-### Example 7: PortChannel Sub-Interfaces
+### Example 8: PortChannel Sub-Interfaces
 
 ```bash
 python configure_vrf_subinterfaces.py \
