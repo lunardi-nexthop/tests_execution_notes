@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="700" height="1200" xmlns="http://www.w3.org/2000/svg">
+<rect x="100" y="100" width="250" height="900" fill="#f5f5f5" stroke="#424242" stroke-width="3"/>
+<text x="225.0" y="30" text-anchor="middle" font-size="14px" font-weight="bold" fill="#01579b">IXIA 1.1</text>
+<text x="225.0" y="45" text-anchor="middle" font-size="11px" fill="#01579b">192.168.0.1/31</text>
+<line x1="225.0" y1="50" x2="225.0" y2="140" stroke="#01579b" stroke-width="2"/>
+<rect x="175.0" y="140" width="100" height="35" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="115" y="162" font-size="11px" font-weight="bold" fill="#000000">Vrf1</text>
+<text x="225.0" y="158" text-anchor="middle" font-size="13px" font-weight="bold" fill="#000000">Eth0</text>
+<text x="225.0" y="170" text-anchor="middle" font-size="9px" fill="#000000">192.168.0.0/31</text>
+<rect x="175.0" y="200" width="100" height="35" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="225.0" y="218" text-anchor="middle" font-size="13px" font-weight="bold" fill="#000000">Eth8</text>
+<text x="225.0" y="230" text-anchor="middle" font-size="9px" fill="#000000">192.168.0.2/31</text>
+<path d="M 275.0 217.5 L 430 217.5 Q 450 247.5 430 277.5 L 275.0 277.5" stroke="#c62828" stroke-width="2" fill="none"/>
+<rect x="175.0" y="260" width="100" height="35" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="115" y="282" font-size="11px" font-weight="bold" fill="#000000">Vrf2</text>
+<text x="225.0" y="278" text-anchor="middle" font-size="13px" font-weight="bold" fill="#000000">Eth16</text>
+<text x="225.0" y="290" text-anchor="middle" font-size="9px" fill="#000000">192.168.0.3/31</text>
+<rect x="175.0" y="320" width="100" height="35" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="225.0" y="338" text-anchor="middle" font-size="13px" font-weight="bold" fill="#000000">Eth24</text>
+<text x="225.0" y="350" text-anchor="middle" font-size="9px" fill="#000000">192.168.0.4/31</text>
+<path d="M 275.0 337.5 L 430 337.5 Q 450 367.5 430 397.5 L 275.0 397.5" stroke="#c62828" stroke-width="2" fill="none"/>
+<rect x="175.0" y="380" width="100" height="35" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="115" y="402" font-size="11px" font-weight="bold" fill="#000000">Vrf3</text>
+<text x="225.0" y="398" text-anchor="middle" font-size="13px" font-weight="bold" fill="#000000">Eth32</text>
+<text x="225.0" y="410" text-anchor="middle" font-size="9px" fill="#000000">192.168.0.5/31</text>
+<rect x="175.0" y="440" width="100" height="35" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="225.0" y="458" text-anchor="middle" font-size="13px" font-weight="bold" fill="#000000">Eth40</text>
+<text x="225.0" y="470" text-anchor="middle" font-size="9px" fill="#000000">192.168.0.6/31</text>
+<path d="M 275.0 457.5 L 430 457.5 Q 450 487.5 430 517.5 L 275.0 517.5" stroke="#c62828" stroke-width="2" fill="none"/>
+<text x="225.0" y="520" text-anchor="middle" font-size="20px" fill="#000000">⋮</text>
+<text x="225.0" y="538" text-anchor="middle" font-size="11px" fill="#000000">Vrf4 - Vrf30</text>
+<text x="225.0" y="550" text-anchor="middle" font-size="20px" fill="#000000">⋮</text>
+<rect x="175.0" y="590" width="100" height="35" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="115" y="612" font-size="11px" font-weight="bold" fill="#000000">Vrf31</text>
+<text x="225.0" y="608" text-anchor="middle" font-size="13px" font-weight="bold" fill="#000000">Eth480</text>
+<rect x="175.0" y="650" width="100" height="35" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="225.0" y="668" text-anchor="middle" font-size="13px" font-weight="bold" fill="#000000">Eth488</text>
+<path d="M 275.0 667.5 L 430 667.5 Q 450 697.5 430 727.5 L 275.0 727.5" stroke="#c62828" stroke-width="2" fill="none"/>
+<rect x="175.0" y="710" width="100" height="35" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="115" y="732" font-size="11px" font-weight="bold" fill="#000000">Vrf32</text>
+<text x="225.0" y="728" text-anchor="middle" font-size="13px" font-weight="bold" fill="#000000">Eth496</text>
+<rect x="175.0" y="770" width="100" height="35" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="225.0" y="788" text-anchor="middle" font-size="13px" font-weight="bold" fill="#000000">Eth504</text>
+<text x="225.0" y="800" text-anchor="middle" font-size="9px" fill="#000000">192.168.0.65/31</text>
+<line x1="225.0" y1="805" x2="225.0" y2="1000" stroke="#01579b" stroke-width="2"/>
+<line x1="225.0" y1="1000" x2="225.0" y2="1030" stroke="#01579b" stroke-width="2"/>
+<text x="225.0" y="1050" text-anchor="middle" font-size="14px" font-weight="bold" fill="#01579b">IXIA 2.1</text>
+<text x="225.0" y="1065" text-anchor="middle" font-size="11px" fill="#01579b">192.168.0.65/31</text>
+</svg>

@@ -13,38 +13,77 @@ A snake test is a network testing topology where traffic flows through multiple 
 The script generates configurations based on the following architecture:
 
 ```
-External Traffic Generator (IXIA)
-    ↓ IXIA 1.1 (192.168.0.1/31)
-    ↓
-┌───────────────────────────────────┐
-│         Single DUT Device         │
-│                                   │
-│  ┌─────────────────────────────┐ │
-│  │ Vrf1                        │ │
-│  │  - Ethernet0  (192.168.0.1) │ │──→ External loopback
-│  │  - Ethernet8  (192.168.0.2) │ │←──
-│  └─────────────────────────────┘ │
-│                                   │
-│  ┌─────────────────────────────┐ │
-│  │ Vrf2                        │ │
-│  │  - Ethernet24 (192.168.0.3) │ │──→ External loopback
-│  │  - Ethernet16 (192.168.0.4) │ │←──
-│  └─────────────────────────────┘ │
-│                                   │
-│  ... (Vrf3 - Vrf29)               │
-│                                   │
-│  ┌─────────────────────────────┐ │
-│  │ Vrf31                       │ │
-│  │  - Ethernet472              │ │──→ External loopback
-│  │  - Ethernet480              │ │←──
-│  └─────────────────────────────┘ │
-│                                   │
-│  ┌─────────────────────────────┐ │
-│  │ Vrf32                       │ │
-│  │  - Ethernet464              │ │
-│  │  - Ethernet504              │ │──→ IXIA 2.1 (192.168.0.65/31)
-│  └─────────────────────────────┘ │
-└───────────────────────────────────┘
+                                    IXIA 1.1
+                                 192.168.0.1/31
+                                       │
+                                       │
+        ┌──────────────────────────────┼──────────────────────────────┐
+        │                              │                              │
+        │                         ┌────┴────┐                         │
+        │    Vrf1                 │  Eth0   │  192.168.0.0/31         │
+        │                         └────┬────┘                         │
+        │                              │                              │
+        │                         ┌────┴────┐                         │
+        │                         │  Eth8   │  192.168.0.2/31         │
+        │                         └────┬────┘                         │
+        │                              │                              │
+        │                              └──────┐                       │
+        │                                     │ External               │
+        │                              ┌──────┘ Loopback              │
+        │                              │                              │
+        │                         ┌────┴────┐                         │
+        │    Vrf2                 │  Eth16  │  192.168.0.3/31         │
+        │                         └────┬────┘                         │
+        │                              │                              │
+        │                         ┌────┴────┐                         │
+        │                         │  Eth24  │  192.168.0.4/31         │
+        │                         └────┬────┘                         │
+        │                              │                              │
+        │                              └──────┐                       │
+        │                                     │ External               │
+        │                              ┌──────┘ Loopback              │
+        │                              │                              │
+        │                         ┌────┴────┐                         │
+        │    Vrf3                 │  Eth32  │  192.168.0.5/31         │
+        │                         └────┬────┘                         │
+        │                              │                              │
+        │                         ┌────┴────┐                         │
+        │                         │  Eth40  │  192.168.0.6/31         │
+        │                         └────┬────┘                         │
+        │                              │                              │
+        │                              └──────┐                       │
+        │                                     │ External               │
+        │                              ┌──────┘ Loopback              │
+        │                              │                              │
+        │                              ⋮                              │
+        │                    (Vrf4 - Vrf30)                           │
+        │                              ⋮                              │
+        │                              │                              │
+        │                         ┌────┴────┐                         │
+        │    Vrf31                │ Eth480  │                         │
+        │                         └────┬────┘                         │
+        │                              │                              │
+        │                         ┌────┴────┐                         │
+        │                         │ Eth488  │                         │
+        │                         └────┬────┘                         │
+        │                              │                              │
+        │                              └──────┐                       │
+        │                                     │ External               │
+        │                              ┌──────┘ Loopback              │
+        │                              │                              │
+        │                         ┌────┴────┐                         │
+        │    Vrf32                │ Eth496  │                         │
+        │                         └────┬────┘                         │
+        │                              │                              │
+        │                         ┌────┴────┐                         │
+        │                         │ Eth504  │  192.168.0.65/31        │
+        │                         └────┬────┘                         │
+        │                              │                              │
+        └──────────────────────────────┼──────────────────────────────┘
+                                       │
+                                       │
+                                    IXIA 2.1
+                                 192.168.0.65/31
 ```
 
 ### Traffic Flow Pattern
@@ -52,7 +91,20 @@ External Traffic Generator (IXIA)
 - **Flow 1**: 192.168.0.1 → 192.168.0.65 (forward direction)
 - **Flow 2**: 192.168.0.65 → 192.168.0.1 (reverse direction)
 
-Traffic enters at IXIA 1.1, flows through all 32 VRFs in a snake pattern via external loopbacks, and exits at IXIA 2.1.
+Traffic enters at **IXIA 1.1** (connected to **Ethernet0**), flows through all 32 VRFs in a snake pattern via external loopback cables, and exits at **IXIA 2.1** (connected to **Ethernet504**).
+
+### External Loopback Connections Required
+
+The snake topology requires external loopback cables connecting the following interface pairs:
+- Eth8 ↔ Eth16
+- Eth24 ↔ Eth32
+- Eth40 ↔ Eth48
+- Eth56 ↔ Eth64
+- ... (pattern continues for all VRFs)
+- Eth472 ↔ Eth480
+- Eth488 ↔ Eth496
+
+**Total loopback cables needed**: 30 (one between each consecutive VRF pair)
 
 ## Configuration Details
 
