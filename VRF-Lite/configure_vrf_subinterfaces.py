@@ -366,7 +366,7 @@ Examples:
     bulk_group.add_argument('--count', type=int, default=1, help='Number of sub-interfaces to create per parent interface')
     bulk_group.add_argument('--vlan-increment', type=int, default=1, help='VLAN ID increment (default: 1)')
     bulk_group.add_argument('--ip-increment', type=int, default=2, help='IP increment within same interface (default: 2 for /31)')
-    bulk_group.add_argument('--ipv6-increment', type=int, default=1, help='IPv6 increment within same interface (default: 1)')
+    bulk_group.add_argument('--ipv6-increment', type=int, default=2, help='IPv6 increment within same interface (default: 2 for /127)')
     bulk_group.add_argument('--ip-octet3-increment', action='store_true',
                            help='Increment 3rd octet by 1 for each parent interface (e.g., 10.0.0.1 -> 10.0.1.1)')
     bulk_group.add_argument('--ipv6-segment-increment', action='store_true',

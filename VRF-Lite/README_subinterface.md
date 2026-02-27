@@ -126,7 +126,7 @@ python configure_vrf_subinterfaces.py --config example_subinterfaces.json
 | `--count` | ❌ No | Number of sub-interfaces per parent (default: 1) | `5` |
 | `--vlan-increment` | ❌ No | VLAN ID increment (default: 1) | `1`, `10` |
 | `--ip-increment` | ❌ No | IPv4 increment within same interface (default: 2 for /31) | `2`, `4` |
-| `--ipv6-increment` | ❌ No | IPv6 increment within same interface (default: 1) | `1`, `2` |
+| `--ipv6-increment` | ❌ No | IPv6 increment within same interface (default: 2 for /127) | `1`, `2` |
 | `--ip-octet3-increment` | ❌ No | Increment IPv4 3rd octet by 1 for each parent interface | flag |
 | `--ipv6-segment-increment` | ❌ No | Increment IPv6 segment by 1 for each parent interface | flag |
 | `--vrf-name` | ❌ No | Single VRF for all sub-interfaces | `Vrf1` |
@@ -283,7 +283,7 @@ python configure_vrf_subinterfaces.py \
   --parent-interface-list Ethernet384,Ethernet386,Ethernet388 \
   --start-vlan-id 100 \
   --start-ip 10.0.0.1/31 \
-  --start-ipv6 fc00:0:0::1/64 \
+  --start-ipv6 fc00::1/127 \
   --count 3 \
   --vrf-list Vrf1,Vrf2,Vrf3 \
   --ip-octet3-increment \
@@ -292,19 +292,19 @@ python configure_vrf_subinterfaces.py \
 
 **Result:**
 - **Ethernet384**:
-  - Vrf1: IPv4=10.0.0.1/31, IPv6=fc00::1/64
-  - Vrf2: IPv4=10.0.0.3/31, IPv6=fc00::2/64
-  - Vrf3: IPv4=10.0.0.5/31, IPv6=fc00::3/64
+  - Vrf1: IPv4=10.0.0.1/31, IPv6=fc00::1/127
+  - Vrf2: IPv4=10.0.0.3/31, IPv6=fc00::3/127
+  - Vrf3: IPv4=10.0.0.5/31, IPv6=fc00::5/127
 - **Ethernet386**:
-  - Vrf1: IPv4=10.0.1.1/31, IPv6=fc00:0:0:1::1/64
-  - Vrf2: IPv4=10.0.1.3/31, IPv6=fc00:0:0:1::2/64
-  - Vrf3: IPv4=10.0.1.5/31, IPv6=fc00:0:0:1::3/64
+  - Vrf1: IPv4=10.0.1.1/31, IPv6=fc00:0:0:1::1/127
+  - Vrf2: IPv4=10.0.1.3/31, IPv6=fc00:0:0:1::3/127
+  - Vrf3: IPv4=10.0.1.5/31, IPv6=fc00:0:0:1::5/127
 - **Ethernet388**:
-  - Vrf1: IPv4=10.0.2.1/31, IPv6=fc00:0:0:2::1/64
-  - Vrf2: IPv4=10.0.2.3/31, IPv6=fc00:0:0:2::2/64
-  - Vrf3: IPv4=10.0.2.5/31, IPv6=fc00:0:0:2::3/64
+  - Vrf1: IPv4=10.0.2.1/31, IPv6=fc00:0:0:2::1/127
+  - Vrf2: IPv4=10.0.2.3/31, IPv6=fc00:0:0:2::3/127
+  - Vrf3: IPv4=10.0.2.5/31, IPv6=fc00:0:0:2::5/127
 
-The IPv4 3rd octet and IPv6 segment both increment by 1 for each parent interface.
+The IPv4 3rd octet and IPv6 segment both increment by 1 for each parent interface. Within each interface, both IPv4 and IPv6 increment by 2 for /31 and /127 networks respectively.
 
 ### Example 7: Dual-Stack (IPv4 + IPv6) - Using Config File
 
