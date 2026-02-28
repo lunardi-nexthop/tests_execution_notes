@@ -24,6 +24,21 @@ A flexible Python script to easily configure VRF-enabled sub-interfaces on SONiC
 - ✅ Supports IPv4 and IPv6
 - ✅ VRF binding support
 - ✅ Works with physical interfaces and PortChannels
+- ⚠️ **Interface name validation** - Warns about SONiC's 15-character limit
+
+## Important: Interface Name Length Limit
+
+⚠️ **SONiC has a 15-character limit for interface names** (including the sub-interface suffix).
+
+**Examples:**
+- ✅ `Ethernet64.100` (15 chars) - **OK**
+- ✅ `Po11.200` (9 chars) - **OK**
+- ❌ `PortChannel11.100` (17 chars) - **TOO LONG**
+
+**Recommendation:** Use short forms for PortChannel interfaces:
+- Use `Po1` instead of `PortChannel1`
+- Use `Po10` instead of `PortChannel10`
+- Use `Po100` instead of `PortChannel100`
 
 ## Quick Start
 
@@ -108,7 +123,7 @@ python configure_vrf_subinterfaces.py --config example_subinterfaces.json
 **Single Sub-Interface:**
 | Parameter | Required | Description | Example |
 |-----------|----------|-------------|---------|
-| `--parent-interface` | ✅ Yes | Parent interface name | `Ethernet0`, `PortChannel10` |
+| `--parent-interface` | ✅ Yes | Parent interface name (use `Po` for PortChannel) | `Ethernet0`, `Po10` |
 | `--vlan-id` | ✅ Yes | VLAN ID (802.1Q tag) | `100`, `200` |
 | `--ip-address` | ✅ Yes | IPv4 address with prefix | `10.0.0.1/24` |
 | `--vrf-name` | ❌ No | VRF name (optional) | `Vrf1`, `Vrf2` |
@@ -118,8 +133,8 @@ python configure_vrf_subinterfaces.py --config example_subinterfaces.json
 **Bulk Mode (Auto-Increment):**
 | Parameter | Required | Description | Example |
 |-----------|----------|-------------|---------|
-| `--parent-interface` | One required | Single parent interface | `Ethernet0` |
-| `--parent-interface-list` | One required | Comma-separated parent interfaces | `Ethernet384,Ethernet386` |
+| `--parent-interface` | One required | Single parent interface (use `Po` for PortChannel) | `Ethernet0`, `Po1` |
+| `--parent-interface-list` | One required | Comma-separated parent interfaces | `Ethernet384,Ethernet386`, `Po1,Po2` |
 | `--start-vlan-id` | ✅ Yes | Starting VLAN ID | `100` |
 | `--start-ip` | One required | Starting IPv4 address with prefix | `10.0.0.1/31` |
 | `--start-ipv6` | One required | Starting IPv6 address with prefix | `fc00:0:0::1/64` |
@@ -324,12 +339,15 @@ python configure_vrf_subinterfaces.py --config dual_stack.yaml
 ### Example 8: PortChannel Sub-Interfaces
 
 ```bash
+# Use short form "Po" to stay within 15-character limit
 python configure_vrf_subinterfaces.py \
-  --parent-interface PortChannel10 \
+  --parent-interface Po10 \
   --vlan-id 100 \
   --ip-address 10.0.100.1/24 \
   --vrf-name Vrf1
 ```
+
+**Note:** Use `Po` instead of `PortChannel` to avoid exceeding SONiC's 15-character interface name limit.
 
 ## Applying Configuration
 

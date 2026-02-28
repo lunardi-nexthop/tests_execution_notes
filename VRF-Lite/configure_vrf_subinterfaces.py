@@ -28,17 +28,31 @@ from typing import List, Dict, Optional
 
 class SubInterfaceConfig:
     """Represents a single sub-interface configuration."""
-    
-    def __init__(self, parent_interface: str, vlan_id: int, ip_address: str, 
+
+    def __init__(self, parent_interface: str, vlan_id: int, ip_address: str,
                  vrf_name: Optional[str] = None, ipv6_address: Optional[str] = None,
                  admin_status: str = "up"):
-        self.parent_interface = parent_interface
+        # Normalize interface name: convert PortChannel to Po
+        if parent_interface.startswith('PortChannel'):
+            normalized_parent = 'Po' + parent_interface.replace('PortChannel', '')
+            if parent_interface != normalized_parent:
+                print(f"INFO: Normalizing '{parent_interface}' to '{normalized_parent}' (SONiC 15-char limit)")
+            self.parent_interface = normalized_parent
+        else:
+            self.parent_interface = parent_interface
+
         self.vlan_id = vlan_id
         self.ip_address = ip_address
         self.ipv6_address = ipv6_address
         self.vrf_name = vrf_name
         self.admin_status = admin_status
-        self.name = f"{parent_interface}.{vlan_id}"
+        self.name = f"{self.parent_interface}.{vlan_id}"
+
+        # Validate interface name length (SONiC has 15-char limit)
+        if len(self.name) > 15:
+            print(f"WARNING: Sub-interface name '{self.name}' exceeds 15 characters ({len(self.name)} chars)!")
+            print(f"         SONiC will reject this configuration.")
+            print(f"         Please use a shorter interface name or lower VLAN ID.")
     
     def to_dict(self) -> Dict:
         """Convert to dictionary format."""
@@ -113,13 +127,14 @@ class VRFSubInterfaceConfigurator:
         
         # Add sub-interface configurations
         for sub_int in self.sub_interfaces:
-            # Interface entry with admin status and VRF binding
+            # Interface entry with admin status, VRF binding, and VLAN ID
             interface_config = {
-                "admin_status": sub_int.admin_status
+                "admin_status": sub_int.admin_status,
+                "vlan": str(sub_int.vlan_id)
             }
             if sub_int.vrf_name:
                 interface_config["vrf_name"] = sub_int.vrf_name
-            
+
             config["VLAN_SUB_INTERFACE"][sub_int.name] = interface_config
             
             # IPv4 address entry
