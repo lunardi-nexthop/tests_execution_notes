@@ -294,6 +294,14 @@ Contains three main sections:
 - Check VRF assignments: `show vrf`
 - Verify IP addresses: `show ip interface`
 - Check static routes: `show ip route vrf <vrf_name>`
+- Verify nexthop is reachable using the following script:
+
+```bash
+for i in `show vrf | grep Vrf |awk '{print $1}'`; do \
+  show ip route vrf $i | grep 'S>' |sed 's/,.*//' | \
+  awk -F'via' '{print $2}' | xargs -I{} sudo ip vrf exec $i ping -c1 {}; \
+done
+```
 
 ### Incorrect Routing
 - Verify nexthop addresses match peer interface IPs
