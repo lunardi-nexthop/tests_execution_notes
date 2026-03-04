@@ -51,8 +51,8 @@ def create_2dut_snake_diagram(output_file='vrf_snake_2DUTs_topology.svg'):
                       f'stroke="#01579b" stroke-width="2" marker-end="url(#arrowblue)"/>')
 
     # IXIA 2.1 connection to DUT2 Ethernet0
-    ixia2_x = dut2_x + box_width + 20
-    ixia2_y = box_y + box_height - 50
+    ixia2_x = dut2_x + box_width + 30 #20
+    ixia2_y = box_y + box_height - 48 #50
     svg_content.append(f'<line x1="{dut2_x + box_width}" y1="{ixia2_y + 5}" '
                       f'x2="{ixia2_x}" y2="{ixia2_y + 5}" '
                       f'stroke="#01579b" stroke-width="2" marker-end="url(#arrowblue)"/>')
