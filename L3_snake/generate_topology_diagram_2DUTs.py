@@ -37,31 +37,6 @@ def create_2dut_snake_diagram(output_file='vrf_snake_2DUTs_topology.svg'):
     interface_width = 80
     interface_height = 30
 
-    # IXIA 1.1 connection to DUT1 Ethernet0
-    ixia1_x = dut1_x - 150
-    ixia1_y = box_y + 50
-    svg_content.append(f'<text x="{ixia1_x}" y="{ixia1_y}" '
-                      f'font-size="12px" font-weight="bold" fill="#01579b">192.168.0.1/31</text>')
-    svg_content.append(f'<text x="{ixia1_x + 20}" y="{ixia1_y + 15}" '
-                      f'font-size="11px" fill="#01579b">IXIA 1.1</text>')
-    
-    # Arrow from IXIA1 to DUT1 Eth0
-    svg_content.append(f'<line x1="{ixia1_x + 100}" y1="{ixia1_y + 5}" '
-                      f'x2="{dut1_x}" y2="{ixia1_y + 5}" '
-                      f'stroke="#01579b" stroke-width="2" marker-end="url(#arrowblue)"/>')
-
-    # IXIA 2.1 connection to DUT2 Ethernet0
-    ixia2_x = dut2_x + box_width + 30 #20
-    ixia2_y = box_y + box_height - 48 #50
-    svg_content.append(f'<line x1="{dut2_x + box_width}" y1="{ixia2_y + 5}" '
-                      f'x2="{ixia2_x}" y2="{ixia2_y + 5}" '
-                      f'stroke="#01579b" stroke-width="2" marker-end="url(#arrowblue)"/>')
-    
-    svg_content.append(f'<text x="{ixia2_x + 10}" y="{ixia2_y}" '
-                      f'font-size="12px" font-weight="bold" fill="#01579b">192.168.0.255/31</text>')
-    svg_content.append(f'<text x="{ixia2_x + 30}" y="{ixia2_y + 15}" '
-                      f'font-size="11px" fill="#01579b">IXIA 2.1</text>')
-
     # Define arrow markers
     svg_content.insert(2, '<defs>')
     svg_content.insert(3, '<marker id="arrowred" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">')
@@ -85,6 +60,19 @@ def create_2dut_snake_diagram(output_file='vrf_snake_2DUTs_topology.svg'):
                       f'fill="#c8e6c9" stroke="{interface_color}" stroke-width="2" rx="5"/>')
     svg_content.append(f'<text x="{int_x + interface_width/2}" y="{y_pos + 20}" text-anchor="middle" '
                       f'font-size="12px" font-weight="bold" fill="{text_color}">0</text>')
+    
+    # IXIA 1.1 connection to DUT1 Ethernet0 (connect to the interface, not the box)
+    ixia1_x = dut1_x - 150
+    ixia1_y = y_pos + interface_height/2 - 10
+    svg_content.append(f'<text x="{ixia1_x}" y="{ixia1_y}" '
+                      f'font-size="12px" font-weight="bold" fill="#01579b">192.168.0.1/31</text>')
+    svg_content.append(f'<text x="{ixia1_x + 20}" y="{ixia1_y + 15}" '
+                      f'font-size="11px" fill="#01579b">IXIA 1.1</text>')
+    
+    # Arrow from IXIA1 to DUT1 Eth0 (connect to left edge of interface)
+    svg_content.append(f'<line x1="{ixia1_x + 100}" y1="{ixia1_y + 5}" '
+                      f'x2="{int_x}" y2="{y_pos + interface_height/2}" '
+                      f'stroke="#01579b" stroke-width="2" marker-end="url(#arrowblue)"/>')
     
     # Vrf1 label on left side of DUT1
     svg_content.append(f'<text x="{dut1_x + 10}" y="{y_pos + 70}" '
@@ -247,6 +235,20 @@ def create_2dut_snake_diagram(output_file='vrf_snake_2DUTs_topology.svg'):
                       f'fill="#c8e6c9" stroke="{interface_color}" stroke-width="2" rx="5"/>')
     svg_content.append(f'<text x="{dut2_int_x + interface_width/2}" y="{dut2_y_pos + 20}" text-anchor="middle" '
                       f'font-size="12px" font-weight="bold" fill="{text_color}">0</text>')
+
+    # IXIA 2.1 connection to DUT2 Ethernet0 (connect to the interface, not the box)
+    ixia2_x = dut2_x + box_width + 30
+    ixia2_y = dut2_y_pos + interface_height/2 - 10
+    
+    # Arrow from DUT2 Eth0 to IXIA2 (connect from right edge of interface)
+    svg_content.append(f'<line x1="{dut2_int_x + interface_width}" y1="{dut2_y_pos + interface_height/2}" '
+                      f'x2="{ixia2_x}" y2="{ixia2_y + 5}" '
+                      f'stroke="#01579b" stroke-width="2" marker-end="url(#arrowblue)"/>')
+    
+    svg_content.append(f'<text x="{ixia2_x + 10}" y="{ixia2_y}" '
+                      f'font-size="12px" font-weight="bold" fill="#01579b">192.168.0.255/31</text>')
+    svg_content.append(f'<text x="{ixia2_x + 30}" y="{ixia2_y + 15}" '
+                      f'font-size="11px" fill="#01579b">IXIA 2.1</text>')
 
     # Close SVG
     svg_content.append('</svg>')
