@@ -20,10 +20,10 @@ def create_2dut_snake_diagram(output_file='vrf_snake_2DUTs_topology.svg'):
 
     # Box dimensions for DUT1 (left) and DUT2 (right)
     dut1_x = 50
-    dut2_x = 600
+    dut2_x = 500
     box_y = 50
     box_width = 200
-    box_height = 700
+    box_height = 600
 
     # Draw DUT1 box
     svg_content.append(f'<rect x="{dut1_x}" y="{box_y}" width="{box_width}" height="{box_height}" '
