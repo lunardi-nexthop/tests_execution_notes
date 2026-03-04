@@ -21,7 +21,7 @@ def create_snake_diagram(output_file='vrf_snake_topology.svg'):
     box_x = 100
     box_y = 100
     box_width = 250
-    box_height = 700 
+    box_height = 750 
     # Draw main DUT box
     svg_content.append(f'<rect x="{box_x}" y="{box_y}" width="{box_width}" height="{box_height}" '
                       f'fill="#f5f5f5" stroke="{box_color}" stroke-width="3"/>')
