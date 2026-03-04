@@ -8,59 +8,59 @@
 <path d="M0,0 L0,6 L9,3 z" fill="#01579b" />
 </marker>
 </defs>
-<rect x="50" y="50" width="200" height="600" fill="#f5f5f5" stroke="#424242" stroke-width="3"/>
-<rect x="500" y="50" width="200" height="600" fill="#f5f5f5" stroke="#424242" stroke-width="3"/>
+<rect x="50" y="50" width="200" height="500" fill="#f5f5f5" stroke="#424242" stroke-width="3"/>
+<rect x="400" y="50" width="200" height="500" fill="#f5f5f5" stroke="#424242" stroke-width="3"/>
 <text x="-100" y="100" font-size="12px" font-weight="bold" fill="#01579b">192.168.0.1/31</text>
 <text x="-80" y="115" font-size="11px" fill="#01579b">IXIA 1.1</text>
 <line x1="0" y1="105" x2="50" y2="105" stroke="#01579b" stroke-width="2" marker-end="url(#arrowblue)"/>
-<line x1="700" y1="605" x2="720" y2="605" stroke="#01579b" stroke-width="2" marker-end="url(#arrowblue)"/>
-<text x="730" y="600" font-size="12px" font-weight="bold" fill="#01579b">192.168.0.255/31</text>
-<text x="750" y="615" font-size="11px" fill="#01579b">IXIA 2.1</text>
+<line x1="600" y1="505" x2="620" y2="505" stroke="#01579b" stroke-width="2" marker-end="url(#arrowblue)"/>
+<text x="630" y="500" font-size="12px" font-weight="bold" fill="#01579b">192.168.0.255/31</text>
+<text x="650" y="515" font-size="11px" fill="#01579b">IXIA 2.1</text>
 <rect x="110.0" y="100" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
 <text x="150.0" y="120" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">0</text>
 <text x="60" y="170" font-size="11px" font-weight="bold" fill="#1565c0">Vrf1</text>
 <rect x="110.0" y="150" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
 <text x="150.0" y="170" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">8</text>
 <text x="260" y="170" font-size="9px" fill="#000000">192.168.0.2/31</text>
-<line x1="190.0" y1="165.0" x2="560.0" y2="165.0" stroke="#c62828" stroke-width="2"/>
-<rect x="560.0" y="150" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
-<text x="600.0" y="170" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">8</text>
-<text x="710" y="170" font-size="9px" fill="#000000">192.168.0.3/31</text>
-<text x="665" y="220" font-size="11px" font-weight="bold" fill="#1565c0">Vrf1</text>
+<line x1="190.0" y1="165.0" x2="460.0" y2="165.0" stroke="#c62828" stroke-width="2"/>
+<rect x="460.0" y="150" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="500.0" y="170" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">8</text>
+<text x="610" y="170" font-size="9px" fill="#000000">192.168.0.3/31</text>
+<text x="565" y="220" font-size="11px" font-weight="bold" fill="#1565c0">Vrf1</text>
 <rect x="110.0" y="200" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
 <text x="150.0" y="220" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">16</text>
 <text x="260" y="220" font-size="9px" fill="#000000">192.168.0.4/31</text>
 <text x="60" y="270" font-size="11px" font-weight="bold" fill="#1565c0">Vrf2</text>
-<rect x="560.0" y="200" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
-<text x="600.0" y="220" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">16</text>
-<text x="710" y="220" font-size="9px" fill="#000000">192.168.0.5/31</text>
-<line x1="190.0" y1="215.0" x2="560.0" y2="215.0" stroke="#c62828" stroke-width="2"/>
+<rect x="460.0" y="200" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="500.0" y="220" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">16</text>
+<text x="610" y="220" font-size="9px" fill="#000000">192.168.0.5/31</text>
+<line x1="190.0" y1="215.0" x2="460.0" y2="215.0" stroke="#c62828" stroke-width="2"/>
 <rect x="110.0" y="250" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
 <text x="150.0" y="270" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">24</text>
-<rect x="560.0" y="250" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
-<text x="600.0" y="270" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">24</text>
-<text x="665" y="320" font-size="11px" font-weight="bold" fill="#1565c0">Vrf2</text>
-<line x1="190.0" y1="265.0" x2="560.0" y2="265.0" stroke="#c62828" stroke-width="2"/>
+<rect x="460.0" y="250" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="500.0" y="270" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">24</text>
+<text x="565" y="320" font-size="11px" font-weight="bold" fill="#1565c0">Vrf2</text>
+<line x1="190.0" y1="265.0" x2="460.0" y2="265.0" stroke="#c62828" stroke-width="2"/>
 <text x="150.0" y="320" text-anchor="middle" font-size="24px" fill="#000000">⋮</text>
 <text x="150.0" y="340" text-anchor="middle" font-size="24px" fill="#000000">⋮</text>
 <text x="150.0" y="360" text-anchor="middle" font-size="24px" fill="#000000">⋮</text>
-<text x="600.0" y="320" text-anchor="middle" font-size="24px" fill="#000000">⋮</text>
-<text x="600.0" y="340" text-anchor="middle" font-size="24px" fill="#000000">⋮</text>
-<text x="600.0" y="360" text-anchor="middle" font-size="24px" fill="#000000">⋮</text>
+<text x="500.0" y="320" text-anchor="middle" font-size="24px" fill="#000000">⋮</text>
+<text x="500.0" y="340" text-anchor="middle" font-size="24px" fill="#000000">⋮</text>
+<text x="500.0" y="360" text-anchor="middle" font-size="24px" fill="#000000">⋮</text>
 <rect x="110.0" y="400" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
 <text x="150.0" y="420" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">496</text>
 <text x="60" y="470" font-size="11px" font-weight="bold" fill="#1565c0">Vrf32</text>
-<rect x="560.0" y="400" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
-<text x="600.0" y="420" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">496</text>
-<line x1="190.0" y1="415.0" x2="560.0" y2="415.0" stroke="#c62828" stroke-width="2"/>
+<rect x="460.0" y="400" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="500.0" y="420" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">496</text>
+<line x1="190.0" y1="415.0" x2="460.0" y2="415.0" stroke="#c62828" stroke-width="2"/>
 <rect x="110.0" y="450" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
 <text x="150.0" y="470" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">504</text>
 <text x="260" y="470" font-size="9px" fill="#000000">192.168.0.126/31</text>
-<rect x="560.0" y="450" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
-<text x="600.0" y="470" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">504</text>
-<text x="710" y="470" font-size="9px" fill="#000000">192.168.0.127/31</text>
-<text x="660" y="520" font-size="11px" font-weight="bold" fill="#1565c0">Vrf32</text>
-<line x1="190.0" y1="465.0" x2="560.0" y2="465.0" stroke="#c62828" stroke-width="2"/>
-<rect x="560.0" y="500" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
-<text x="600.0" y="520" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">0</text>
+<rect x="460.0" y="450" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="500.0" y="470" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">504</text>
+<text x="610" y="470" font-size="9px" fill="#000000">192.168.0.127/31</text>
+<text x="560" y="520" font-size="11px" font-weight="bold" fill="#1565c0">Vrf32</text>
+<line x1="190.0" y1="465.0" x2="460.0" y2="465.0" stroke="#c62828" stroke-width="2"/>
+<rect x="460.0" y="500" width="80" height="30" fill="#c8e6c9" stroke="#2e7d32" stroke-width="2" rx="5"/>
+<text x="500.0" y="520" text-anchor="middle" font-size="12px" font-weight="bold" fill="#000000">0</text>
 </svg>
