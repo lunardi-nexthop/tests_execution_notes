@@ -11,44 +11,117 @@ config vrf add Vrf2
 # Create VRF Vrf3
 config vrf add Vrf3
 
-# Configure PortChannel1.100
-config subinterface add PortChannel1.100 100
-config interface vrf bind PortChannel1.100 Vrf1
-config interface ip add PortChannel1.100 10.10.0.1/31
-config interface ip add PortChannel1.100 fc00:a:a::1/127
-config interface startup PortChannel1.100
+# Create VRF Vrf4
+config vrf add Vrf4
 
-# Configure PortChannel1.101
-config subinterface add PortChannel1.101 101
-config interface vrf bind PortChannel1.101 Vrf2
-config interface ip add PortChannel1.101 10.10.0.3/31
-config interface ip add PortChannel1.101 fc00:a:a::3/127
-config interface startup PortChannel1.101
+# Configure Po1.100
+config subinterface add Po1.100 100
+config interface vrf bind Po1.100 Vrf1
+config interface ip add Po1.100 10.10.20.8/31
+config interface ip add Po1.100 fc00:a:a:14::8/127
+config interface startup Po1.100
 
-# Configure PortChannel1.102
-config subinterface add PortChannel1.102 102
-config interface vrf bind PortChannel1.102 Vrf3
-config interface ip add PortChannel1.102 10.10.0.5/31
-config interface ip add PortChannel1.102 fc00:a:a::5/127
-config interface startup PortChannel1.102
+# Configure Po1.101
+config subinterface add Po1.101 101
+config interface vrf bind Po1.101 Vrf2
+config interface ip add Po1.101 10.10.20.10/31
+config interface ip add Po1.101 fc00:a:a:14::a/127
+config interface startup Po1.101
 
-# Configure PortChannel2.100
-config subinterface add PortChannel2.100 100
-config interface vrf bind PortChannel2.100 Vrf1
-config interface ip add PortChannel2.100 10.10.1.1/31
-config interface ip add PortChannel2.100 fc00:a:a:1::1/127
-config interface startup PortChannel2.100
+# Configure Po1.102
+config subinterface add Po1.102 102
+config interface vrf bind Po1.102 Vrf3
+config interface ip add Po1.102 10.10.20.12/31
+config interface ip add Po1.102 fc00:a:a:14::c/127
+config interface startup Po1.102
 
-# Configure PortChannel2.101
-config subinterface add PortChannel2.101 101
-config interface vrf bind PortChannel2.101 Vrf2
-config interface ip add PortChannel2.101 10.10.1.3/31
-config interface ip add PortChannel2.101 fc00:a:a:1::3/127
-config interface startup PortChannel2.101
+# Configure Po1.103
+config subinterface add Po1.103 103
+config interface vrf bind Po1.103 Vrf4
+config interface ip add Po1.103 10.10.20.14/31
+config interface ip add Po1.103 fc00:a:a:14::e/127
+config interface startup Po1.103
 
-# Configure PortChannel2.102
-config subinterface add PortChannel2.102 102
-config interface vrf bind PortChannel2.102 Vrf3
-config interface ip add PortChannel2.102 10.10.1.5/31
-config interface ip add PortChannel2.102 fc00:a:a:1::5/127
-config interface startup PortChannel2.102
+# Configure Po2.100
+config subinterface add Po2.100 100
+config interface vrf bind Po2.100 Vrf1
+config interface ip add Po2.100 10.10.20.16/31
+config interface ip add Po2.100 fc00:a:a:14::10/127
+config interface startup Po2.100
+
+# Configure Po2.101
+config subinterface add Po2.101 101
+config interface vrf bind Po2.101 Vrf2
+config interface ip add Po2.101 10.10.20.18/31
+config interface ip add Po2.101 fc00:a:a:14::12/127
+config interface startup Po2.101
+
+# Configure Po2.102
+config subinterface add Po2.102 102
+config interface vrf bind Po2.102 Vrf3
+config interface ip add Po2.102 10.10.20.20/31
+config interface ip add Po2.102 fc00:a:a:14::14/127
+config interface startup Po2.102
+
+# Configure Po2.103
+config subinterface add Po2.103 103
+config interface vrf bind Po2.103 Vrf4
+config interface ip add Po2.103 10.10.20.22/31
+config interface ip add Po2.103 fc00:a:a:14::16/127
+config interface startup Po2.103
+
+# Configure Po3.100
+config subinterface add Po3.100 100
+config interface vrf bind Po3.100 Vrf1
+config interface ip add Po3.100 10.10.20.24/31
+config interface ip add Po3.100 fc00:a:a:14::18/127
+config interface startup Po3.100
+
+# Configure Po3.101
+config subinterface add Po3.101 101
+config interface vrf bind Po3.101 Vrf2
+config interface ip add Po3.101 10.10.20.26/31
+config interface ip add Po3.101 fc00:a:a:14::1a/127
+config interface startup Po3.101
+
+# Configure Po3.102
+config subinterface add Po3.102 102
+config interface vrf bind Po3.102 Vrf3
+config interface ip add Po3.102 10.10.20.28/31
+config interface ip add Po3.102 fc00:a:a:14::1c/127
+config interface startup Po3.102
+
+# Configure Po3.103
+config subinterface add Po3.103 103
+config interface vrf bind Po3.103 Vrf4
+config interface ip add Po3.103 10.10.20.30/31
+config interface ip add Po3.103 fc00:a:a:14::1e/127
+config interface startup Po3.103
+
+# Configure Po4.100
+config subinterface add Po4.100 100
+config interface vrf bind Po4.100 Vrf1
+config interface ip add Po4.100 10.10.20.32/31
+config interface ip add Po4.100 fc00:a:a:14::20/127
+config interface startup Po4.100
+
+# Configure Po4.101
+config subinterface add Po4.101 101
+config interface vrf bind Po4.101 Vrf2
+config interface ip add Po4.101 10.10.20.34/31
+config interface ip add Po4.101 fc00:a:a:14::22/127
+config interface startup Po4.101
+
+# Configure Po4.102
+config subinterface add Po4.102 102
+config interface vrf bind Po4.102 Vrf3
+config interface ip add Po4.102 10.10.20.36/31
+config interface ip add Po4.102 fc00:a:a:14::24/127
+config interface startup Po4.102
+
+# Configure Po4.103
+config subinterface add Po4.103 103
+config interface vrf bind Po4.103 Vrf4
+config interface ip add Po4.103 10.10.20.38/31
+config interface ip add Po4.103 fc00:a:a:14::26/127
+config interface startup Po4.103

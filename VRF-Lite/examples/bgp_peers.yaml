@@ -1,0 +1,57 @@
+# BGP Peering Configuration Example
+# This configuration sets up multiple BGP peers using VRF sub-interfaces
+# Each peer gets a dedicated VRF for isolation
+
+sub_interfaces:
+  # ISP Uplinks
+  - parent_interface: Ethernet0
+    vlan_id: 100
+    ip_address: 10.1.1.0/31
+    ipv6_address: 2001:db8:1::0/127
+    vrf_name: ISP_A
+    admin_status: up
+  
+  - parent_interface: Ethernet0
+    vlan_id: 101
+    ip_address: 10.1.1.2/31
+    ipv6_address: 2001:db8:1::2/127
+    vrf_name: ISP_B
+    admin_status: up
+  
+  # Customer Peering
+  - parent_interface: Ethernet1
+    vlan_id: 200
+    ip_address: 10.2.1.0/31
+    ipv6_address: 2001:db8:2::0/127
+    vrf_name: Customer_Alpha
+    admin_status: up
+  
+  - parent_interface: Ethernet1
+    vlan_id: 201
+    ip_address: 10.2.1.2/31
+    ipv6_address: 2001:db8:2::2/127
+    vrf_name: Customer_Beta
+    admin_status: up
+  
+  - parent_interface: Ethernet1
+    vlan_id: 202
+    ip_address: 10.2.1.4/31
+    ipv6_address: 2001:db8:2::4/127
+    vrf_name: Customer_Gamma
+    admin_status: up
+  
+  # Transit Providers on PortChannel
+  - parent_interface: PortChannel10
+    vlan_id: 300
+    ip_address: 172.16.0.0/31
+    ipv6_address: fc00:0:0::0/127
+    vrf_name: Transit_1
+    admin_status: up
+  
+  - parent_interface: PortChannel10
+    vlan_id: 301
+    ip_address: 172.16.0.2/31
+    ipv6_address: fc00:0:0::2/127
+    vrf_name: Transit_2
+    admin_status: up
+

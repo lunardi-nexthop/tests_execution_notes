@@ -23,7 +23,102 @@ import json
 import yaml
 import sys
 import os
-from typing import List, Dict, Optional
+import ipaddress
+from typing import List, Dict, Optional, Tuple
+
+
+def get_point_to_point_neighbor(ip_with_prefix: str) -> Optional[str]:
+    """
+    For point-to-point networks (/31 for IPv4, /127 for IPv6),
+    determine the neighboring host IP address.
+
+    Args:
+        ip_with_prefix: IP address with prefix (e.g., "10.0.0.0/31" or "fc00::0/127")
+
+    Returns:
+        The neighboring IP address with prefix, or None if not a point-to-point network
+
+    Examples:
+        "10.0.0.0/31" -> "10.0.0.1/31"
+        "10.0.0.1/31" -> "10.0.0.0/31"
+        "fc00::0/127" -> "fc00::1/127"
+        "fc00::1/127" -> "fc00::0/127"
+        "10.0.0.0/24" -> None (not a point-to-point network)
+    """
+    try:
+        # Parse the IP address and prefix
+        ip_interface = ipaddress.ip_interface(ip_with_prefix)
+        network = ip_interface.network
+
+        # Check if it's a point-to-point network
+        if isinstance(ip_interface.ip, ipaddress.IPv4Address):
+            # IPv4: /31 is point-to-point (RFC 3021)
+            if network.prefixlen != 31:
+                return None
+        elif isinstance(ip_interface.ip, ipaddress.IPv6Address):
+            # IPv6: /127 is point-to-point (RFC 6164)
+            if network.prefixlen != 127:
+                return None
+        else:
+            return None
+
+        # Get all hosts in the network (for /31 and /127, this gives us both IPs)
+        hosts = list(network.hosts()) if network.num_addresses > 2 else [network.network_address, network.broadcast_address]
+
+        # Find the neighbor (the other IP in the pair)
+        for host in hosts:
+            if host != ip_interface.ip:
+                return f"{host}/{network.prefixlen}"
+
+        return None
+    except Exception as e:
+        print(f"Warning: Could not determine neighbor for {ip_with_prefix}: {e}")
+        return None
+
+
+def is_point_to_point_network(ip_with_prefix: str) -> bool:
+    """
+    Check if the given IP address is part of a point-to-point network.
+
+    Args:
+        ip_with_prefix: IP address with prefix (e.g., "10.0.0.0/31" or "fc00::0/127")
+
+    Returns:
+        True if it's a /31 (IPv4) or /127 (IPv6) network, False otherwise
+    """
+    try:
+        ip_interface = ipaddress.ip_interface(ip_with_prefix)
+        if isinstance(ip_interface.ip, ipaddress.IPv4Address):
+            return ip_interface.network.prefixlen == 31
+        elif isinstance(ip_interface.ip, ipaddress.IPv6Address):
+            return ip_interface.network.prefixlen == 127
+        return False
+    except Exception:
+        return False
+
+
+def get_network_base_ip(ip_with_prefix: str) -> Optional[str]:
+    """
+    Get the base (first) IP address of a point-to-point network.
+
+    Args:
+        ip_with_prefix: IP address with prefix (e.g., "10.0.0.1/31")
+
+    Returns:
+        The base IP address with prefix (e.g., "10.0.0.0/31"), or the original if not p2p
+    """
+    try:
+        ip_interface = ipaddress.ip_interface(ip_with_prefix)
+        network = ip_interface.network
+
+        if isinstance(ip_interface.ip, ipaddress.IPv4Address) and network.prefixlen == 31:
+            return f"{network.network_address}/{network.prefixlen}"
+        elif isinstance(ip_interface.ip, ipaddress.IPv6Address) and network.prefixlen == 127:
+            return f"{network.network_address}/{network.prefixlen}"
+
+        return ip_with_prefix
+    except Exception:
+        return ip_with_prefix
 
 
 class SubInterfaceConfig:
@@ -65,6 +160,30 @@ class SubInterfaceConfig:
             'admin_status': self.admin_status,
             'name': self.name
         }
+
+    def get_neighbor_ipv4(self) -> Optional[str]:
+        """Get the neighboring IPv4 address for point-to-point networks (/31)."""
+        if self.ip_address:
+            return get_point_to_point_neighbor(self.ip_address)
+        return None
+
+    def get_neighbor_ipv6(self) -> Optional[str]:
+        """Get the neighboring IPv6 address for point-to-point networks (/127)."""
+        if self.ipv6_address:
+            return get_point_to_point_neighbor(self.ipv6_address)
+        return None
+
+    def is_ipv4_point_to_point(self) -> bool:
+        """Check if IPv4 address is part of a point-to-point network (/31)."""
+        if self.ip_address:
+            return is_point_to_point_network(self.ip_address)
+        return False
+
+    def is_ipv6_point_to_point(self) -> bool:
+        """Check if IPv6 address is part of a point-to-point network (/127)."""
+        if self.ipv6_address:
+            return is_point_to_point_network(self.ipv6_address)
+        return False
 
 
 class VRFSubInterfaceConfigurator:
@@ -264,8 +383,16 @@ class VRFSubInterfaceConfigurator:
             print(f"    VLAN ID: {sub_int.vlan_id}")
             if sub_int.ip_address:
                 print(f"    IPv4: {sub_int.ip_address}")
+                if sub_int.is_ipv4_point_to_point():
+                    neighbor = sub_int.get_neighbor_ipv4()
+                    if neighbor:
+                        print(f"    IPv4 Neighbor: {neighbor} (point-to-point /31)")
             if sub_int.ipv6_address:
                 print(f"    IPv6: {sub_int.ipv6_address}")
+                if sub_int.is_ipv6_point_to_point():
+                    neighbor = sub_int.get_neighbor_ipv6()
+                    if neighbor:
+                        print(f"    IPv6 Neighbor: {neighbor} (point-to-point /127)")
             if sub_int.vrf_name:
                 print(f"    VRF: {sub_int.vrf_name}")
             print(f"    Admin Status: {sub_int.admin_status}")
@@ -432,7 +559,6 @@ Examples:
         )
     elif (args.parent_interface or args.parent_interface_list) and args.start_vlan_id and (args.start_ip or args.start_ipv6):
         # Bulk mode with auto-increment
-        import ipaddress
 
         # Parse starting IPv4 if provided
         ip_addr = None
@@ -444,6 +570,20 @@ Examples:
                 ip_network = ipaddress.ip_network(args.start_ip, strict=False)
                 ip_addr = ipaddress.ip_address(args.start_ip.split('/')[0])
                 prefix_len = args.start_ip.split('/')[1]
+
+                # Check if it's a /31 network and provide helpful info
+                if prefix_len == '31':
+                    print(f"\nINFO: Detected /31 point-to-point network")
+                    print(f"      Starting IP: {args.start_ip}")
+                    neighbor = get_point_to_point_neighbor(args.start_ip)
+                    if neighbor:
+                        print(f"      Neighbor IP: {neighbor}")
+                    # Normalize to base IP of the /31 pair
+                    base_ip = get_network_base_ip(args.start_ip)
+                    if base_ip != args.start_ip:
+                        print(f"      Normalized to base IP: {base_ip}")
+                        ip_addr = ipaddress.ip_address(base_ip.split('/')[0])
+                    print()
 
                 # Parse base IP address into octets
                 base_ip_parts = str(ip_addr).split('.')
@@ -465,6 +605,21 @@ Examples:
                 ipv6_network = ipaddress.ip_network(args.start_ipv6, strict=False)
                 ipv6_addr = ipaddress.ip_address(args.start_ipv6.split('/')[0])
                 ipv6_prefix_len = args.start_ipv6.split('/')[1]
+
+                # Check if it's a /127 network and provide helpful info
+                if ipv6_prefix_len == '127':
+                    print(f"\nINFO: Detected /127 point-to-point network")
+                    print(f"      Starting IPv6: {args.start_ipv6}")
+                    neighbor = get_point_to_point_neighbor(args.start_ipv6)
+                    if neighbor:
+                        print(f"      Neighbor IPv6: {neighbor}")
+                    # Normalize to base IP of the /127 pair
+                    base_ipv6 = get_network_base_ip(args.start_ipv6)
+                    if base_ipv6 != args.start_ipv6:
+                        print(f"      Normalized to base IPv6: {base_ipv6}")
+                        ipv6_addr = ipaddress.ip_address(base_ipv6.split('/')[0])
+                    print()
+
                 base_ipv6_int = int(ipv6_addr)
             except Exception as e:
                 print(f"Error parsing IPv6 address: {e}")

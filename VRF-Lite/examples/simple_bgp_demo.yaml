@@ -1,0 +1,22 @@
+# Simple BGP Demo Configuration
+# 3 ISP uplinks on Ethernet0 with different VLANs and VRFs
+
+sub_interfaces:
+  - parent_interface: Ethernet0
+    vlan_id: 100
+    ip_address: 192.168.1.0/31
+    vrf_name: ISP1
+    admin_status: up
+  
+  - parent_interface: Ethernet0
+    vlan_id: 101
+    ip_address: 192.168.1.2/31
+    vrf_name: ISP2
+    admin_status: up
+  
+  - parent_interface: Ethernet0
+    vlan_id: 102
+    ip_address: 192.168.1.4/31
+    vrf_name: ISP3
+    admin_status: up
+
