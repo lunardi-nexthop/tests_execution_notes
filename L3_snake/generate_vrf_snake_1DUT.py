@@ -23,17 +23,32 @@ def generate_mac_address(base_mac, ethernet_num):
 
 
 def generate_single_dut_snake_config(output_file, base_network, static_route_network,
-                                   include_ipv6, base_mac, dual_flow=False, second_flow_network="172.16.0"):
+                                   include_ipv6, base_mac, dual_flow=False, second_flow_network="172.16.0",
+                                   num_interfaces=64):
     """Generate SONiC configuration for single DUT snake test (like vrf3.json pattern)."""
+
+    # Calculate number of VRFs based on interfaces
+    if dual_flow:
+        interfaces_per_vrf = 4
+    else:
+        interfaces_per_vrf = 2
+
+    num_vrfs = num_interfaces // interfaces_per_vrf
+
+    if num_interfaces % interfaces_per_vrf != 0:
+        print(f"Warning: num_interfaces ({num_interfaces}) is not evenly divisible by interfaces_per_vrf ({interfaces_per_vrf})")
+        print(f"Will create {num_vrfs} VRFs with {interfaces_per_vrf} interfaces each = {num_vrfs * interfaces_per_vrf} total interfaces")
 
     if dual_flow:
         print(f"Generating dual-flow single DUT snake test configuration")
-        print(f"32 VRFs, 4 interfaces per VRF (2 flows)")
+        print(f"{num_vrfs} VRFs, 4 interfaces per VRF (2 flows)")
+        print(f"Total interfaces: {num_interfaces}")
         print(f"First flow: Ethernet0,8,16,24... with {base_network}.x IPs")
         print(f"Second flow: Ethernet4,12,20,28... with {second_flow_network}.x IPs")
     else:
         print(f"Generating single DUT snake test configuration")
-        print(f"32 VRFs, 2 interfaces per VRF (single flow)")
+        print(f"{num_vrfs} VRFs, 2 interfaces per VRF (single flow)")
+        print(f"Total interfaces: {num_interfaces}")
         print(f"Interface increment: 8")
 
     config = OrderedDict()
@@ -44,8 +59,8 @@ def generate_single_dut_snake_config(output_file, base_network, static_route_net
     # Store VRF interface information for static route generation
     vrf_interfaces = {}
 
-    # Generate interfaces for all 32 VRFs
-    for vrf_index in range(32):
+    # Generate interfaces for all VRFs
+    for vrf_index in range(num_vrfs):
         vrf_name = f"Vrf{vrf_index + 1}"
 
         # Add VRF to VRF section
@@ -164,7 +179,25 @@ def generate_single_dut_snake_config(output_file, base_network, static_route_net
 
 
 def generate_single_dut_static_routes(config, vrf_interfaces, static_route_network, dual_flow=False):
-    """Generate static routes for single DUT snake test based on vrf3.json pattern."""
+    """Generate static routes for single DUT snake test based on actual interface IPs."""
+
+    # Find the lowest and highest host IPs across all VRFs to determine route destinations
+    all_host_nums = []
+    for vrf_name, interfaces in vrf_interfaces.items():
+        for iface in interfaces:
+            all_host_nums.append(iface['host_num'])
+
+    if not all_host_nums:
+        return
+
+    min_host = min(all_host_nums)
+    max_host = max(all_host_nums)
+
+    # Calculate low and high route destinations
+    # Low route: points to the minimum IP (typically 0)
+    # High route: points to IP beyond the maximum used IP
+    low_route_ip = min_host
+    high_route_ip = max_host + 2  # +2 to get the next /31 subnet beyond the last interface
 
     for vrf_name, interfaces in vrf_interfaces.items():
         if dual_flow and len(interfaces) < 4:
@@ -182,16 +215,19 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
             first_flow_interfaces = interfaces[0:2]  # Ethernet0,8 / Ethernet16,24 etc.
             second_flow_interfaces = interfaces[2:4]  # Ethernet4,12 / Ethernet20,28 etc.
 
+            # Get network prefix for first flow
+            first_flow_network = first_flow_interfaces[0]['network']
+
             # Generate routes for first flow (base_network pattern)
             if vrf_number == 1:
-                # Vrf1 special case: only has one route (base_network.64/31)
+                # Vrf1 special case: only has one route (high route)
                 second_interface = first_flow_interfaces[1]  # Ethernet8
 
                 ip_parts = second_interface['ip_address'].split('/')
                 ip_addr = ipaddress.IPv4Address(ip_parts[0])
                 nexthop = str(ip_addr + 1)
 
-                route_key = f"{vrf_name}|{static_route_network}.0.64/31"
+                route_key = f"{vrf_name}|{first_flow_network}.{high_route_ip}/31"
                 config['STATIC_ROUTE'][route_key] = {
                     "blackhole": "false",
                     "distance": "0",
@@ -200,16 +236,16 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
                     "nexthop-vrf": vrf_name
                 }
             else:
-                # Vrf2-Vrf32: have two routes each for first flow
+                # Vrf2+: have two routes each for first flow
                 first_interface = first_flow_interfaces[0]
                 second_interface = first_flow_interfaces[1]
 
-                # First route: base_network.0/31 using first interface
+                # First route: low route using first interface
                 ip_parts = first_interface['ip_address'].split('/')
                 ip_addr = ipaddress.IPv4Address(ip_parts[0])
                 nexthop = str(ip_addr - 1)
 
-                route_key = f"{vrf_name}|{static_route_network}.0.0/31"
+                route_key = f"{vrf_name}|{first_flow_network}.{low_route_ip}/31"
                 config['STATIC_ROUTE'][route_key] = {
                     "blackhole": "false",
                     "distance": "0",
@@ -218,12 +254,12 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
                     "nexthop-vrf": vrf_name
                 }
 
-                # Second route: base_network.64/31 using second interface
+                # Second route: high route using second interface
                 ip_parts = second_interface['ip_address'].split('/')
                 ip_addr = ipaddress.IPv4Address(ip_parts[0])
                 nexthop = str(ip_addr + 1)
 
-                route_key = f"{vrf_name}|{static_route_network}.0.64/31"
+                route_key = f"{vrf_name}|{first_flow_network}.{high_route_ip}/31"
                 config['STATIC_ROUTE'][route_key] = {
                     "blackhole": "false",
                     "distance": "0",
@@ -233,15 +269,17 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
                 }
 
             # Generate routes for second flow (second_flow_network pattern)
+            second_flow_network = second_flow_interfaces[0]['network']
+
             if vrf_number == 1:
-                # Vrf1 special case: only has one route (second_flow_network.64/31)
+                # Vrf1 special case: only has one route (high route)
                 second_interface = second_flow_interfaces[1]  # Ethernet12
 
                 ip_parts = second_interface['ip_address'].split('/')
                 ip_addr = ipaddress.IPv4Address(ip_parts[0])
                 nexthop = str(ip_addr + 1)
 
-                route_key = f"{vrf_name}|{second_flow_interfaces[0]['network']}.64/31"
+                route_key = f"{vrf_name}|{second_flow_network}.{high_route_ip}/31"
                 config['STATIC_ROUTE'][route_key] = {
                     "blackhole": "false",
                     "distance": "0",
@@ -250,16 +288,16 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
                     "nexthop-vrf": vrf_name
                 }
             else:
-                # Vrf2-Vrf32: have two routes each for second flow
+                # Vrf2+: have two routes each for second flow
                 first_interface = second_flow_interfaces[0]
                 second_interface = second_flow_interfaces[1]
 
-                # First route: second_flow_network.0/31 using first interface
+                # First route: low route using first interface
                 ip_parts = first_interface['ip_address'].split('/')
                 ip_addr = ipaddress.IPv4Address(ip_parts[0])
                 nexthop = str(ip_addr - 1)
 
-                route_key = f"{vrf_name}|{first_interface['network']}.0/31"
+                route_key = f"{vrf_name}|{second_flow_network}.{low_route_ip}/31"
                 config['STATIC_ROUTE'][route_key] = {
                     "blackhole": "false",
                     "distance": "0",
@@ -268,12 +306,12 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
                     "nexthop-vrf": vrf_name
                 }
 
-                # Second route: second_flow_network.64/31 using second interface
+                # Second route: high route using second interface
                 ip_parts = second_interface['ip_address'].split('/')
                 ip_addr = ipaddress.IPv4Address(ip_parts[0])
                 nexthop = str(ip_addr + 1)
 
-                route_key = f"{vrf_name}|{second_interface['network']}.64/31"
+                route_key = f"{vrf_name}|{second_flow_network}.{high_route_ip}/31"
                 config['STATIC_ROUTE'][route_key] = {
                     "blackhole": "false",
                     "distance": "0",
@@ -282,9 +320,11 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
                     "nexthop-vrf": vrf_name
                 }
         else:
-            # Single flow mode: original logic
+            # Single flow mode: dynamic route calculation
+            interface_network = interfaces[0]['network']
+
             if vrf_number == 1:
-                # Vrf1 special case: only has one route (base_network.64/31)
+                # Vrf1 special case: only has one route (high route)
                 second_interface = interfaces[1]  # Use second interface (Ethernet8)
 
                 # Parse IP address to get nexthop (IP + 1)
@@ -292,7 +332,7 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
                 ip_addr = ipaddress.IPv4Address(ip_parts[0])
                 nexthop = str(ip_addr + 1)
 
-                route_key = f"{vrf_name}|{static_route_network}.0.64/31"
+                route_key = f"{vrf_name}|{interface_network}.{high_route_ip}/31"
                 config['STATIC_ROUTE'][route_key] = {
                     "blackhole": "false",
                     "distance": "0",
@@ -301,16 +341,16 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
                     "nexthop-vrf": vrf_name
                 }
             else:
-                # Vrf2-Vrf32: have two routes each
+                # Vrf2+: have two routes each
                 first_interface = interfaces[0]
                 second_interface = interfaces[1]
 
-                # First route: base_network.0/31 using first interface
+                # First route: low route using first interface
                 ip_parts = first_interface['ip_address'].split('/')
                 ip_addr = ipaddress.IPv4Address(ip_parts[0])
                 nexthop = str(ip_addr - 1)
 
-                route_key = f"{vrf_name}|{static_route_network}.0.0/31"
+                route_key = f"{vrf_name}|{interface_network}.{low_route_ip}/31"
                 config['STATIC_ROUTE'][route_key] = {
                     "blackhole": "false",
                     "distance": "0",
@@ -319,12 +359,12 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
                     "nexthop-vrf": vrf_name
                 }
 
-                # Second route: base_network.64/31 using second interface
+                # Second route: high route using second interface
                 ip_parts = second_interface['ip_address'].split('/')
                 ip_addr = ipaddress.IPv4Address(ip_parts[0])
                 nexthop = str(ip_addr + 1)
 
-                route_key = f"{vrf_name}|{static_route_network}.0.64/31"
+                route_key = f"{vrf_name}|{interface_network}.{high_route_ip}/31"
                 config['STATIC_ROUTE'][route_key] = {
                     "blackhole": "false",
                     "distance": "0",
@@ -336,19 +376,22 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Generate SONiC JSON configuration files for single DUT snake tests (32 VRFs, 2 interfaces per VRF)',
+        description='Generate SONiC JSON configuration files for single DUT snake tests',
         epilog='''
 Examples:
-  %(prog)s --output single_dut_snake.json                    # Basic single DUT snake config
+  %(prog)s --output single_dut_snake.json                    # Basic single DUT snake config (64 interfaces default)
   %(prog)s --output snake_ipv6.json --include-ipv6           # Include IPv6 addresses
   %(prog)s --dual-flow --output dual_snake.json              # Dual flow (1x800G + 2x400G)
   %(prog)s --base-network 10.0.0 --output custom_snake.json # Custom base network
+  %(prog)s --num-interfaces 128 --output large_snake.json    # Custom number of interfaces
         ''',
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
     parser.add_argument('--output', type=str, default='single_dut_snake.json',
                         help='Output file path (default: single_dut_snake.json)')
+    parser.add_argument('--num-interfaces', type=int, default=64,
+                        help='Total number of interfaces to configure (default: 64)')
     parser.add_argument('--base-network', type=str, default='192.168.0',
                         help='Base IP network (default: 192.168.0)')
     parser.add_argument('--static-route-network', type=str, default='192.168',
@@ -366,18 +409,21 @@ Examples:
 
     args = parser.parse_args()
 
+    # Calculate number of VRFs
+    interfaces_per_vrf = 4 if args.dual_flow else 2
+    num_vrfs = args.num_interfaces // interfaces_per_vrf
+
     if args.dry_run:
         print("DRY RUN MODE - No files will be created")
         print(f"Would create: {args.output}")
-        print(f"VRFs: 32")
+        print(f"Total interfaces: {args.num_interfaces}")
+        print(f"VRFs: {num_vrfs}")
         if args.dual_flow:
             print(f"Interfaces per VRF: 4 (dual flow)")
-            print(f"Total interfaces: 128")
             print(f"First flow network: {args.base_network}")
             print(f"Second flow network: {args.second_flow_network}")
         else:
             print(f"Interfaces per VRF: 2")
-            print(f"Total interfaces: 64")
             print(f"Base network: {args.base_network}")
         print(f"Static route network: {args.static_route_network}")
         print(f"Include IPv6: {args.include_ipv6}")
@@ -387,7 +433,8 @@ Examples:
     # Generate the configuration
     generate_single_dut_snake_config(
         args.output, args.base_network, args.static_route_network,
-        args.include_ipv6, args.base_mac, args.dual_flow, args.second_flow_network
+        args.include_ipv6, args.base_mac, args.dual_flow, args.second_flow_network,
+        args.num_interfaces
     )
 
 
