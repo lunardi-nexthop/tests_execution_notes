@@ -138,8 +138,8 @@ def generate_single_dut_snake_config(output_file, base_network, static_route_net
                     # Second flow IPv6: use different prefix
                     ipv6_address = f"2001:{current_network.replace('.', ':')}::{host_num}/127"
                 else:
-                    # First flow IPv6: original pattern
-                    ipv6_address = f"2000:{current_network.replace('.', ':')}::{host_num}/127"
+                    # Single/First flow IPv6: 2001:192:168::0/127, 2001:192:168::2/127, etc.
+                    ipv6_address = f"2001:192:168::{host_num}/127"
                 ipv6_key = f"{interface_name}|{ipv6_address}"
                 config['INTERFACE'][ipv6_key] = {}
 
@@ -154,7 +154,7 @@ def generate_single_dut_snake_config(output_file, base_network, static_route_net
 
     # Generate static routes for single DUT snake test
     print("Generating static routes...")
-    generate_single_dut_static_routes(config, vrf_interfaces, static_route_network, dual_flow)
+    generate_single_dut_static_routes(config, vrf_interfaces, static_route_network, dual_flow, include_ipv6)
 
     # Write the configuration
     try:
@@ -178,26 +178,28 @@ def generate_single_dut_snake_config(output_file, base_network, static_route_net
         sys.exit(1)
 
 
-def generate_single_dut_static_routes(config, vrf_interfaces, static_route_network, dual_flow=False):
+def generate_single_dut_static_routes(config, vrf_interfaces, static_route_network, dual_flow=False, include_ipv6=False):
     """Generate static routes for single DUT snake test based on actual interface IPs."""
 
-    # Find the lowest and highest host IPs across all VRFs to determine route destinations
-    all_host_nums = []
+    # Get the base network from the first interface
+    base_network = None
     for vrf_name, interfaces in vrf_interfaces.items():
-        for iface in interfaces:
-            all_host_nums.append(iface['host_num'])
+        if interfaces:
+            base_network = interfaces[0]['network']
+            break
 
-    if not all_host_nums:
+    if not base_network:
         return
 
-    min_host = min(all_host_nums)
-    max_host = max(all_host_nums)
-
-    # Calculate low and high route destinations
-    # Low route: points to the minimum IP (typically 0)
-    # High route: points to IP beyond the maximum used IP
-    low_route_ip = min_host
-    high_route_ip = max_host + 2  # +2 to get the next /31 subnet beyond the last interface
+    # Static route destinations are fixed:
+    # IPv4 Low route: IXIA 1.1 on 192.168.0.0/31 (connected to Ethernet0)
+    # IPv4 High route: IXIA 2.1 on 192.168.0.128/31 (connected to last port)
+    # IPv6 Low route: IXIA 1.1 on 2001:192:168::/127
+    # IPv6 High route: IXIA 2.1 on 2001:192:168::128/127
+    low_route_ip = 0
+    high_route_ip = 64 
+    ipv6_low_route = "2001:192:168::0/127"
+    ipv6_high_route = "2001:192:168::64/127"
 
     for vrf_name, interfaces in vrf_interfaces.items():
         if dual_flow and len(interfaces) < 4:
@@ -320,19 +322,19 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
                     "nexthop-vrf": vrf_name
                 }
         else:
-            # Single flow mode: dynamic route calculation
-            interface_network = interfaces[0]['network']
-
+            # Single flow mode: routes point to fixed IXIA endpoints
+            # IPv4: 192.168.0.0/31 and 192.168.0.128/31
+            # IPv6: 2001:192:168::/127 and 2001:192:168::128/127
             if vrf_number == 1:
-                # Vrf1 special case: only has one route (high route)
+                # Vrf1 special case: only has one route (high route to IXIA 2.1)
                 second_interface = interfaces[1]  # Use second interface (Ethernet8)
 
-                # Parse IP address to get nexthop (IP + 1)
+                # IPv4 high route
                 ip_parts = second_interface['ip_address'].split('/')
                 ip_addr = ipaddress.IPv4Address(ip_parts[0])
                 nexthop = str(ip_addr + 1)
 
-                route_key = f"{vrf_name}|{interface_network}.{high_route_ip}/31"
+                route_key = f"{vrf_name}|{base_network}.{high_route_ip}/31"
                 config['STATIC_ROUTE'][route_key] = {
                     "blackhole": "false",
                     "distance": "0",
@@ -340,17 +342,33 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
                     "nexthop": nexthop,
                     "nexthop-vrf": vrf_name
                 }
+
+                # IPv6 high route
+                if include_ipv6:
+                    # For IPv6, get the host part from the interface IP (e.g., 2001:192:168::2)
+                    # and calculate nexthop as host + 1 (e.g., 2001:192:168::3)
+                    host_num = second_interface['host_num']
+                    ipv6_nexthop = f"2001:192:168::{host_num + 1}"
+
+                    route_key = f"{vrf_name}|{ipv6_high_route}"
+                    config['STATIC_ROUTE'][route_key] = {
+                        "blackhole": "false",
+                        "distance": "0",
+                        "ifname": second_interface['interface_name'],
+                        "nexthop": ipv6_nexthop,
+                        "nexthop-vrf": vrf_name
+                    }
             else:
                 # Vrf2+: have two routes each
                 first_interface = interfaces[0]
                 second_interface = interfaces[1]
 
-                # First route: low route using first interface
+                # IPv4 First route: low route to IXIA 1.1 (192.168.0.0/31)
                 ip_parts = first_interface['ip_address'].split('/')
                 ip_addr = ipaddress.IPv4Address(ip_parts[0])
                 nexthop = str(ip_addr - 1)
 
-                route_key = f"{vrf_name}|{interface_network}.{low_route_ip}/31"
+                route_key = f"{vrf_name}|{base_network}.{low_route_ip}/31"
                 config['STATIC_ROUTE'][route_key] = {
                     "blackhole": "false",
                     "distance": "0",
@@ -359,12 +377,12 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
                     "nexthop-vrf": vrf_name
                 }
 
-                # Second route: high route using second interface
+                # IPv4 Second route: high route to IXIA 2.1 (192.168.0.128/31)
                 ip_parts = second_interface['ip_address'].split('/')
                 ip_addr = ipaddress.IPv4Address(ip_parts[0])
                 nexthop = str(ip_addr + 1)
 
-                route_key = f"{vrf_name}|{interface_network}.{high_route_ip}/31"
+                route_key = f"{vrf_name}|{base_network}.{high_route_ip}/31"
                 config['STATIC_ROUTE'][route_key] = {
                     "blackhole": "false",
                     "distance": "0",
@@ -372,6 +390,34 @@ def generate_single_dut_static_routes(config, vrf_interfaces, static_route_netwo
                     "nexthop": nexthop,
                     "nexthop-vrf": vrf_name
                 }
+
+                # IPv6 routes
+                if include_ipv6:
+                    # IPv6 First route: low route to IXIA 1.1 (2001:192:168::/127)
+                    first_host_num = first_interface['host_num']
+                    ipv6_nexthop_low = f"2001:192:168::{first_host_num - 1}"
+
+                    route_key = f"{vrf_name}|{ipv6_low_route}"
+                    config['STATIC_ROUTE'][route_key] = {
+                        "blackhole": "false",
+                        "distance": "0",
+                        "ifname": first_interface['interface_name'],
+                        "nexthop": ipv6_nexthop_low,
+                        "nexthop-vrf": vrf_name
+                    }
+
+                    # IPv6 Second route: high route to IXIA 2.1 (2001:192:168::128/127)
+                    second_host_num = second_interface['host_num']
+                    ipv6_nexthop_high = f"2001:192:168::{second_host_num + 1}"
+
+                    route_key = f"{vrf_name}|{ipv6_high_route}"
+                    config['STATIC_ROUTE'][route_key] = {
+                        "blackhole": "false",
+                        "distance": "0",
+                        "ifname": second_interface['interface_name'],
+                        "nexthop": ipv6_nexthop_high,
+                        "nexthop-vrf": vrf_name
+                    }
 
 
 def main():
