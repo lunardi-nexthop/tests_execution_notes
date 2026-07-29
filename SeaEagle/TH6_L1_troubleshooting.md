@@ -60,19 +60,38 @@ Real captured output (seag158, `Ethernet256`, 8-lane 800G port):
         port  link  Lns   duplex scan neg?   state   pause  discrd ops   medium  frame   thru            FEC  back
   d3c28(126)  up     8  800G  FD   HW  No   Forward         Untag   FA Backplane  9122   No    RS544-2xN-ETC
 ```
-**The text prefix in the `port` column (`d3c`, `cd`, `ce`, ...) is the ASIC's internal
-port-macro/TSC-core name — it is tied to that specific port's lane count/breakout config,
-not a fixed "TH6 naming scheme."** Confirmed independently on seag159 (`Ethernet0`,
-2-lane 200G port, different breakout profile than seag158):
+**The text prefix in the `port` column (`d3c`, `cd`, `ce`, `xe`, ...) is not a "TH6
+naming scheme" — it's the SDK's own port-macro-class label, assigned per-port at ASIC init
+time.** Source: `hsdk/hsdk-all/src/bcm/ltsw/port.c`, function `ltsw_port_name_update()` —
+every port is stamped based on which `BCMI_LTSW_PORT_TYPE_*` bitmap it falls into:
+```c
+BCMI_LTSW_DPORT_PBMP_ITER(unit, pbmp, dport, port) {   /* BCMI_LTSW_PORT_TYPE_CDE   */
+    sal_snprintf(..., "cd%d", i++);
+}
+BCMI_LTSW_DPORT_PBMP_ITER(unit, pbmp, dport, port) {   /* BCMI_LTSW_PORT_TYPE_DCCCE */
+    sal_snprintf(..., "d3c%d", i++);
+}
+```
+`bcm_int/ltsw/port.h` defines what those classes mean: `DCCCE` is commented literally as
+the **800G-class** port-macro (`/*! DCCCE(800) port. */`) → `d3c#`; `CDE` is a lower-speed
+class (the ~200G-class port-macro) → `cd#`.
+
+Confirmed this isn't a seag158-vs-seag159 hardware difference — it's the **port_config/
+hwsku breakout profile each box booted with**:
+- **seag158** = hwsku `NH-4210-F-P128`: 128 native 8-lane/800G ports (`port_config.ini`) →
+  classified `DCCCE` at init → `d3c#`.
+- **seag159** = hwsku `NH-4210-F-N512`: the same physical cages broken out 4-ways into
+  512 ports of 2-lane/200G each (`etp1a/b/c/d` in `port_config.ini`) → classified `CDE`
+  at init → `cd#`.
 ```
 root@seag159:/home/admin# bcmcmd 'ps Ethernet0'
 ps 54
    cd48( 54)  up     2  200G  FD   HW  No   Forward          None    F Backplane  9122   No        RS544-2xN
 ```
-Same box family, same command, different prefix (`cd` vs `d3c`) and even a different FEC
-enum string (`RS544-2xN` vs `RS544-2xN-ETC`) purely because the lane count/breakout differs
-(2 lanes vs 8). **Don't hardcode the prefix — only the parenthesized number (the ASIC
-logical port ID) is what you use in follow-on `lt`/`phydiag` commands.**
+**Don't hardcode the prefix — only the parenthesized number (the ASIC logical port ID)
+is what you use in follow-on `lt`/`phydiag` commands.** If you need to predict the prefix
+for a given box, check its hwsku's `port_config.ini` lane count/breakout, not the model
+number.
 
 Same data, structured, straight from the LT:
 ```bash
@@ -109,6 +128,18 @@ most "link down" cases are a config mismatch, not a physical problem. Note this 
 
 ## 3. Serdes / PMD diagnostics (`phydiag`)
 
+**Quick serdes identification** — one-liner, useful before reaching for the full `dsc`
+dump (confirmed live):
+```bash
+docker exec syncd bcmcmd "dsh -c 'phy info 1'"
+```
+```
+port  mdio    serdes_info
+   1: 0x0019  TSCP_G3A0-A0/04/0-1
+```
+`serdes_info` names the physical port-macro/serdes core (`TSCP_G3A0` here) — this is the
+same underlying core `dsc` calls `peregrine3_a0`; different naming layer, same hardware.
+
 **DSC dump** — the single most useful command for "why won't this port link up":
 ```bash
 docker exec syncd bcmcmd "dsh -c 'phydiag 126 dsc'"
@@ -128,6 +159,28 @@ layout, different silicon/microcode). `SD`/`LCK` = signal-detect / CDR lock per 
 `SD=0` or `LCK=0` on a lane means the serdes never saw a valid signal on that lane; check
 the cable/optic and the lane mapping ([TH6 port-mapping](TH6_port_mapping.md)) before
 assuming it's a tuning problem.
+
+`dsc` takes an optional mode (`phydiag <port> dsc <option>`, options per on-device help:
+`lite|ber|config|cl72|debug|std|state|state_eye|state_lane`). Most just reprint the same
+header (not obviously more useful than plain `dsc`), but **`cl72` is genuinely different
+and useful** — confirmed live, it gives a clean per-lane link-training/CL72 status instead
+of the wall of serdes numbers, good for isolating "is this stuck in link training":
+```bash
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 dsc cl72'"
+```
+```
+***************************
+** LANE 0 CL93n72 Status **
+***************************
+linktrn_signal_detect         = 1   (1 = Link training FSM in SEND_DATA state;     0 = Link in training state)
+linktrn_ieee_training_failure = 0   (1 = Training failure detected;                0 = Training failure not detected)
+linktrn_ieee_training_status  = 0   (1 = Start-up protocol in progress;            0 = Start-up protocol complete)
+linktrn_ieee_receiver_status  = 0   (1 = Receiver trained and ready to receive;    0 = Receiver training)
+```
+(repeats per lane). A lane stuck with `linktrn_signal_detect=0` and
+`linktrn_ieee_training_status=1` is stuck *in* link training and never reached
+`SEND_DATA` — a different failure mode than a lane that's simply unlocked (`dsc`'s
+`SD`/`LCK` columns).
 
 **PRBS** (pattern-generator/checker, doesn't need the far end configured for real traffic —
 canonical syntax is `Polynomial=<pval>`, though `p=` works as a prefix-matched shorthand):
@@ -153,6 +206,14 @@ docker exec syncd bcmcmd "dsh -c 'phydiag 126 prbsstat counters'"
 docker exec syncd bcmcmd "dsh -c 'phydiag 126 prbsstat ber'"
 docker exec syncd bcmcmd "dsh -c 'phydiag 126 prbsstat stop'"
 ```
+Faster alternative to waiting out a long `prbsstat` run — **`berproj`** projects a BER
+estimate from an error histogram once PRBS is locked (per on-device help; requires PRBS
+already running and locked, so it shares the "not run live on this link" caveat as PRBS
+`set` above):
+```bash
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 berproj HistogramErrorThreshold=0 SampleTime=10'"
+```
+(`HistogramErrorThreshold` is 3-7, or `0` for auto mode, per the on-device help text.)
 
 **Eye scan** — confirmed safe to run on a live link (link stayed up, no traffic
 interruption seen). On seag158 this platform doesn't support a full 2-D eye scan and
@@ -179,6 +240,16 @@ seag158 — puts the lane into a loopback mode, so only run it on a port that's 
 idle):
 ```bash
 docker exec syncd bcmcmd "dsh -c 'phydiag 126 linkcat mode=lpbk lane=0-7'"
+```
+
+**Verbose per-port event logging** — confirmed live, read-only, safe on a running link.
+Useful when chasing an intermittent flap: bump a port's event-log verbosity, reproduce,
+then check the syncd/kernel log for serdes/link-training events instead of only the final
+up/down state:
+```bash
+docker exec syncd bcmcmd "dsh -c 'phy event_log_mask 126'"        # read current mask
+# -> usr_event_log_group_mask: 0x2e0ffff
+docker exec syncd bcmcmd "dsh -c 'phy event_log_mask 126 <val>'"  # set (not run live — leave at default unless actively debugging)
 ```
 
 ## 4. FEC health (post-link-up BER)
@@ -252,6 +323,14 @@ docker exec syncd bcmcmd "dsh -c 'phydiag 126 tx_taps set pre3=0 pre2=0 pre1=-1 
 For persistent tuning, push the equivalent values through SONiC's `media_settings.json`
 and `config reload` rather than poking the diag shell by hand — that's what actually
 survives a reboot/reload.
+
+There's also `phydiag <port> nr_er_lmt_bias get|set bias=<val> [osr=<val>] [lane=<lane-range>]`
+— per on-device help, this tunes the NR/ER decision threshold used during link training
+(relevant to long/lossy DAC interop tuning). **Tried live on both seag158 and seag159 and
+it failed with "Operation failed" on every port tested** — these ports aren't running in
+an ER/NR link-training mode, so either it needs that mode enabled first or it's simply not
+applicable here. Don't trust this one without re-verifying on a port actually doing ER/NR
+training.
 
 ## 6. Transceiver / optics (DOM)
 
