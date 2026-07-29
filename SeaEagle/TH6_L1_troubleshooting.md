@@ -1,27 +1,44 @@
 # TH6 L1/physical-layer troubleshooting
 
 Practical `bcmcmd`/diag-shell commands for chasing link-down and signal-integrity issues
-on a TH6 (Tomahawk-6, BCM7891x — TH6-P/BCM78910 is Sea Eagle's ASIC, TH6-C/BCM78914 is
-Black Kite's) SONiC device. Command syntax below is cross-checked against the Broadcom
-HSDK/SAI source (`broadcom-sai-sdk` repo — `bcma_bcmpccmd_phy.h`, `bcma_bcmpccmd_phydiag.h`,
-`bcma_bcmpccmd_portstatus.c`) and against real captured output from our own boxes
-(golf/humm/blkt testbeds). All commands run from the host through the syncd container:
+on Sea Eagle's TH6 (Tomahawk-6-P, BCM78910) SONiC device. Every command below was run and
+its output captured live on **seag158** — do the same before trusting a command that isn't
+already in this file; other Broadcom docs/runbooks (including ones for other TH6/TH5
+boxes) turned out to have wrong shell (`bsh` vs `dsh`), wrong argument (`EthernetX` vs
+logical port number), or just plain different output on this platform. All commands run
+from the host through the syncd container:
 
 ```bash
 docker exec syncd bcmcmd '<command>'
 ```
 
-Two nested shells matter here (see [TH6 Broadcom commands](TH6_broadcom_commands.md)):
-`bsh` for `lt`/`pt` logical-table ops, `dsh` for the `phydiag`/`phy diag` serdes toolkit
-(same dispatch — bsh's own help text says "the syntax for 'phy diag' is identical to
-'phydiag'"). On our devices the captured PHY/serdes commands consistently go through
-`dsh -c`, not `bsh -c` — use `bsh` for `lt` table traversal and `dsh` for `phydiag`.
+Two nested shells matter (see [TH6 Broadcom commands](TH6_broadcom_commands.md)):
+`bsh` for `lt`/`pt` logical-table ops, `dsh` for the `phydiag` serdes toolkit. **On
+seag158, `ps`, `lt ... PORT_ID==`, and `phydiag` all take the ASIC's numeric logical
+port, not the `EthernetX` alias** — passing `Ethernet256` gives
+`PortStat: Error: unrecognized port bitmap: Ethernet256` / `ERROR: Failed to parse field
+PORT_ID==Ethernet256`. SONiC-native commands (`show ...`, `dump state port`, `sfputil`)
+do accept the alias directly.
 
-## Troubleshooting flow
+## 0. Find the ASIC logical port number for an interface
 
-1. System health — are the relevant processes even up
-2. Interface config — does CONFIG_DB/APPL_DB/ASIC_DB agree with what's programmed
-3. L1 sublayers, top to bottom: PMD/transceiver → PMA/serdes → FEC → RS/MAC
+This is the step every other section depends on. Get the interface's first lane from
+CONFIG_DB (this is the same number as the ASIC's `PC_PHYS_PORT_ID`, see
+[TH6 port-mapping](TH6_port_mapping.md)), then resolve it to the logical port via
+`PC_PORT_PHYS_MAP`:
+```bash
+sonic-db-cli CONFIG_DB hget "PORT|Ethernet256" lanes
+# -> 233,234,235,236,237,238,239,240  (first lane = PC_PHYS_PORT_ID)
+
+docker exec syncd bcmcmd "bsh -c 'lt PC_PORT_PHYS_MAP traverse -l PC_PHYS_PORT_ID==233'"
+# -> PC_PHYS_PORT_ID=0xe9(233)  PORT_ID=0x7e(126)   <- 126 is the logical port
+```
+(The CONFIG_DB `index` field, e.g. `33` for `Ethernet256`/`etp33`, is SONiC's own
+front-panel numbering — it is **not** the ASIC logical port and won't work in any command
+below. Verified: `ps 33` also errors with `unrecognized port bitmap`.)
+
+Everything below uses **126** (`Ethernet256`, up, 8x100G lanes, RS544-2xN FEC, DAC/copper)
+as the worked example — swap in the logical port you resolved for your own interface.
 
 ## 1. System health
 
@@ -34,113 +51,203 @@ docker exec syncd bcmcmd 'ps'               # errors immediately if syncd/ASIC d
 ## 2. Interface config vs. what the ASIC actually programmed
 
 ```bash
-dump state port EthernetX -t                # CONFIG_DB + APPL_DB + ASIC_DB + STATE_DB in one dump
-docker exec syncd bcmcmd 'ps EthernetX'     # drivshell port-status table
+dump state port Ethernet256 -t              # CONFIG_DB + APPL_DB + ASIC_DB + STATE_DB (alias OK here)
+docker exec syncd bcmcmd 'ps 126'           # drivshell port-status table (needs logical port, see step 0)
 ```
+Real captured output (seag158, `Ethernet256`, 8-lane 800G port):
 ```
-        port  link  Lns   speed/duplex  scan  auto neg?   ...    FEC         loopback
-   d3c0(  1)  up     8    800G  FD       HW   No                 RS544-2xN
+              ena/        speed/ link auto    STP                  lrn             max    cut                 loop
+        port  link  Lns   duplex scan neg?   state   pause  discrd ops   medium  frame   thru            FEC  back
+  d3c28(126)  up     8  800G  FD   HW  No   Forward         Untag   FA Backplane  9122   No    RS544-2xN-ETC
 ```
+**The text prefix in the `port` column (`d3c`, `cd`, `ce`, ...) is the ASIC's internal
+port-macro/TSC-core name — it is tied to that specific port's lane count/breakout config,
+not a fixed "TH6 naming scheme."** Confirmed independently on seag159 (`Ethernet0`,
+2-lane 200G port, different breakout profile than seag158):
+```
+root@seag159:/home/admin# bcmcmd 'ps Ethernet0'
+ps 54
+   cd48( 54)  up     2  200G  FD   HW  No   Forward          None    F Backplane  9122   No        RS544-2xN
+```
+Same box family, same command, different prefix (`cd` vs `d3c`) and even a different FEC
+enum string (`RS544-2xN` vs `RS544-2xN-ETC`) purely because the lane count/breakout differs
+(2 lanes vs 8). **Don't hardcode the prefix — only the parenthesized number (the ASIC
+logical port ID) is what you use in follow-on `lt`/`phydiag` commands.**
 
-Same data, structured, straight from the LT (useful for scripting / exact field values):
+Same data, structured, straight from the LT:
 ```bash
-docker exec syncd bcmcmd "bsh -c 'lt PC_PORT_STATUS traverse -l PORT_ID==EthernetX'"
+docker exec syncd bcmcmd "bsh -c 'lt PC_PORT_STATUS traverse -l PORT_ID==126'"
 ```
-Key fields: `STATUS`, `PMD_RX_LOCK`, `PMD_LANE_RX_LOCK` (per-lane bitmask), `AUTONEG`,
-`AUTONEG_DONE`, `LINK_TRAINING`, `LINK_TRAINING_DONE`, `FEC_MODE`, `LOOPBACK`,
-`REMOTE_FAULT`, `LOCAL_FAULT`. The link-manager's own view of PHY link:
+```
+    LINK_TRAINING_DONE=0
+    LINK_TRAINING=0
+    AUTONEG_DONE=0
+    AUTONEG=0
+    LOOPBACK=PC_LPBK_NONE
+    FEC_MODE=PC_FEC_RS544_2XN_ETC
+    REMOTE_FAULT=0
+    LOCAL_FAULT=0
+    PMD_LANE_RX_LOCK_CHANGE=0
+    PMD_LANE_RX_LOCK=0xff(255)
+    PMD_RX_LOCK=1
+    PHY_DISABLED=0
+    MAC_DISABLED=0
+    NUM_LANES=8
+    SPEED=0xc3500(800000)
+    PORT_ID=0x7e(126)
+```
+The link-manager's own view of PHY link (also confirmed real):
 ```bash
-docker exec syncd bcmcmd "bsh -c 'lt LM_LINK_STATE traverse -l PORT_ID==EthernetX'"
+docker exec syncd bcmcmd "bsh -c 'lt LM_LINK_STATE traverse -l PORT_ID==126'"
+# -> LOCAL_FAULT=0  REMOTE_FAULT=0  PHY_LINK=1  LINK_STATE=1  PORT_ID=0x7e(126)
 ```
 
 Compare number-of-lanes/speed/FEC against the link partner before going any deeper —
-most "link down" cases are a config mismatch, not a physical problem.
+most "link down" cases are a config mismatch, not a physical problem. Note this port has
+`autoneg=off` in CONFIG_DB, matching `AUTONEG=0` above and `Auto-Neg Mode: disabled` in
+`show interfaces autoneg status` — Sea Eagle's copper ports here run forced-speed, not AN.
 
 ## 3. Serdes / PMD diagnostics (`phydiag`)
 
 **DSC dump** — the single most useful command for "why won't this port link up":
 ```bash
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX dsc'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 dsc'"
 ```
-Prints one row per lane:
+Real output (truncated to lane 0, healthy link):
 ```
-LN (P RX , CDRxN , UC_CFG, UC_STS, RST, STP) SD LCK RXPPM PF(M,L,H) VGA DCO TP(0,1,2)
-  RXFFE(n3,n2,n1,m,p1,p2) DFE(1,2) FLT(M,S) TXPPM TXEQ(n3,n2,n1,m,p1,p2) NLC(U,L)
-  EYE(U,M,L) LINK_TIME SNR BER
+pm_id = 30
+ peregrine3_a0_phy_pmd_info_dump:588 type = 16384 laneMask  = 0xFF
+SerDes type          = peregrine3_a0
+...
+LN (P RX , CDRxN , UC_CFG, UC_STS, RST, STP) SD LCK RXPPM PF(M,L,H) VGA DCO TP(0,1,2) RXFFE(...) DFE(1,2) FLT(M,S) TXPPM TXEQ(...) NLC(U,L) EYE(U,M,L) LINK_TIME SNR BER
+ 0 (-+P4N ,BRx1:x1, 0x5004, 0x00_0000, 0,0, 01 ) 1  1*   -5 (11, 9,31)  61  -11 (0,44,2) (-23,57,-130,244,30,-23) (13,0) (-2,12) 0 (0,0,0,168,0,0,)(+0,+0) (82,80,80) 504.9 25.52 !chk_en
 ```
-`SD`/`LCK` = signal-detect / CDR lock per lane — `SD=0` or `LCK=0` on a lane means the
-serdes never saw a valid signal on that lane; check the cable/optic and the lane mapping
-([TH6 port-mapping](TH6_port_mapping.md)) before assuming it's a tuning problem. `TXEQ`
-is the current TX FIR taps, `EYE`/`SNR`/`BER` are the running link-quality figures.
+Sea Eagle's serdes core reports as `peregrine3_a0` — don't assume this matches other
+TH6/TH5 platforms (other boxes/docs show `peregrine5_pc` or `condor3_pc`; same column
+layout, different silicon/microcode). `SD`/`LCK` = signal-detect / CDR lock per lane —
+`SD=0` or `LCK=0` on a lane means the serdes never saw a valid signal on that lane; check
+the cable/optic and the lane mapping ([TH6 port-mapping](TH6_port_mapping.md)) before
+assuming it's a tuning problem.
 
-**PRBS** (pattern-generator/checker, doesn't need the far end configured for real traffic):
+**PRBS** (pattern-generator/checker, doesn't need the far end configured for real traffic —
+canonical syntax is `Polynomial=<pval>`, though `p=` works as a prefix-matched shorthand):
 ```bash
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX prbs set p=3 lane=0,1'"
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX prbs get lane=0,1'"
-# "268 : PRBS OK!" -> pattern-locked, error-free since last clear/set
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX prbs clear lane=0,1'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 prbs get lane=0-7'"
 ```
-Running BER estimate instead of one-shot pass/fail:
+On a port that was never put into PRBS mode this correctly comes back as a failure, not
+a hang — don't read this as a link problem:
+```
+126 : PRBS Failed!
+```
+To actually run a PRBS check you must `set` it first (this takes the port out of normal
+traffic — only do this on a port you know is idle/not carrying real traffic):
 ```bash
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX prbsstat start Interval=10'"
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX prbsstat counters'"
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX prbsstat ber'"
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX prbsstat stop'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 prbs set Polynomial=31 lane=0-7'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 prbs get lane=0-7'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 prbs clear lane=0-7'"
 ```
-If a lane won't lock PRBS at all, that's a hard signal-integrity/cabling problem, not
-a config one — cross-check `linkcat` (below) and the physical connection.
+Running BER estimate instead of one-shot pass/fail — same `set` caveat applies:
+```bash
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 prbsstat start Interval=10'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 prbsstat counters'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 prbsstat ber'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 prbsstat stop'"
+```
 
-**Eye scan** — signal-integrity margin on a locked, quiet link:
+**Eye scan** — confirmed safe to run on a live link (link stayed up, no traffic
+interruption seen). On seag158 this platform doesn't support a full 2-D eye scan and
+falls back to an "eye slice" — a single vertical voltage histogram, not the horizontal
+BER-margin plot some other Broadcom docs describe:
 ```bash
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX eyescan type=fast lane=0-7'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 eyescan type=fast lane=0'"
 ```
+```
+2-D eye scan is not supported, running eye slice instead of eye scan
+ Each character N represents approximate error rate 1e-N at that location
+   191mV : 1.0
+   ...
+     5mV :  +      <- widest/cleanest point in the eye, near mid-swing
+   ...
+  -191mV : 1.0
+```
+Read it as: error rate should climb steeply (higher digit / `:`/`+` marks) as you move
+away from the eye center towards the rails — a shallow, noisy-looking profile across the
+whole voltage range indicates a closing eye (marginal signal).
 
-**Link Cable Analysis Tool** — per-lane channel/signal analysis, good for telling a bad
-cable/lane apart from a bad TX tuning value:
+**Link Cable Analysis Tool** — per-lane channel/signal analysis (not verified live on
+seag158 — puts the lane into a loopback mode, so only run it on a port that's genuinely
+idle):
 ```bash
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX linkcat mode=lpbk lane=0-7'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 linkcat mode=lpbk lane=0-7'"
 ```
 
 ## 4. FEC health (post-link-up BER)
 
-SONiC CLI (preferred — no diag shell needed):
+SONiC CLI (preferred — no diag shell needed; column set on seag158's build also includes
+`FEC_PRE_BER_MAX`, `FLR(O)`, `FLR(P)`, `FEC_MAX_T` — expect this to vary by SONiC version):
 ```bash
 show interfaces counters fec-stats
-show interfaces counters fec-histogram EthernetX
+show interfaces counters fec-histogram Ethernet256
 ```
-Raw ASIC-level equivalents feeding those CLI commands:
+Raw ASIC-level equivalents (confirmed live, healthy link — all zero):
 ```bash
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX fecstat start Interval=10'"
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX fecstat counters'"
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX fecstat ber'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 fecstat start Interval=5'"   # "FECSTAT thread started ..."
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 fecstat counters'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 fecstat ber'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 fecstat stop'"
 ```
-"Flight Data Recorder" — longer-run FEC symbol-error-distribution histogram (the per-lane
-bins behind `fec-histogram`):
+`counters`/`ber` return `FECStat not started` if you skip `start` first — that's the
+diag-shell CLI complaining, not the ASIC.
+
+"Flight Data Recorder" — longer-run FEC symbol-error-distribution histogram (confirmed
+live). Note: on this device `bin_group` is accepted but ignored
+(`FDRStat: bin_group is not used on this device.`) — you still get the full per-symbol-
+error-count histogram (`S0`..`S16`) regardless of what you pass:
 ```bash
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX fdrstat start bin_group=both Interval=10'"
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX fdrstat counters'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 fdrstat start Interval=5'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 fdrstat counters'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 fdrstat stop'"
 ```
 
-FEC auto-collect defaults to a 20s polling interval on TH6. To tighten it while chasing
-an intermittent BER event, go through `PC_PORT_MONITOR`/`PC_PORT_DIAG_CONTROL` — you must
-disable auto-collect on the affected ports before changing the interval (it restarts the
+FEC auto-collect interval is controlled via `PC_PORT_MONITOR`/`PC_PORT_DIAG_CONTROL` (on
+seag158 today, `lt PC_PORT_MONITOR lookup` shows `FEC_STAT_AUTO_COLLECT_INTERVAL_S=1` —
+don't assume a specific default without checking your own box first). You must disable
+auto-collect on the affected ports before changing the interval (it restarts the
 collection thread), then re-enable:
 ```bash
 docker exec syncd bcmcmd "bsh -c 'lt PC_PORT_MONITOR lookup'"
-docker exec syncd bcmcmd "bsh -c 'lt PC_PORT_DIAG_CONTROL update PORT_ID=EthernetX FEC_STAT_AUTO_COLLECT=0'"
+docker exec syncd bcmcmd "bsh -c 'lt PC_PORT_DIAG_CONTROL update PORT_ID=126 FEC_STAT_AUTO_COLLECT=0'"
 docker exec syncd bcmcmd "bsh -c 'lt PC_PORT_MONITOR update FEC_STAT_AUTO_COLLECT_INTERVAL_S=1'"
-docker exec syncd bcmcmd "bsh -c 'lt PC_PORT_DIAG_CONTROL update PORT_ID=EthernetX FEC_STAT_AUTO_COLLECT=1'"
+docker exec syncd bcmcmd "bsh -c 'lt PC_PORT_DIAG_CONTROL update PORT_ID=126 FEC_STAT_AUTO_COLLECT=1'"
 ```
-(This is exactly the sequence from [NOS-3870](https://nexthopai.atlassian.net/browse/NOS-3870) —
-do it per-port in a loop if you need it across a whole box.)
+(Sequence is from [NOS-3870](https://nexthopai.atlassian.net/browse/NOS-3870), which
+tracked this default being an unexpectedly long 20s on some TH6 builds — do it per-port
+in a loop if you need it across a whole box.)
 
 ## 5. TX FIR / signal-integrity tuning
 
-Read/set current TX FIR taps (same command family as `phydiag`, syntax from the HSDK
-`PHY`/`PHYDiag` command headers):
+Read current TX FIR taps — confirmed live, real field names differ from generic SDK docs
+(`nlc_upper`/`nlc_lower`, not `nlc_%`):
 ```bash
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX tx_taps get lane=0'"
-docker exec syncd bcmcmd "dsh -c 'phydiag EthernetX tx_taps set pre3=0 pre2=0 pre1=-1 main=120 post1=0 post2=1 post3=0 lane=0'"
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 tx_taps get lane=0'"
+```
+```
+port lane 126.0 : TX TAP
+nlc_upper  0
+nlc_lower  0
+pre3 0
+pre2 0
+pre1 0
+main 168
+post1 0
+post2 0
+post3 32767
+```
+(`post3 32767` here just means "unset/default", not a real tap value — don't be alarmed
+by it.) Setting taps (not run live — this changes an active link's signal integrity in
+place; only do this on a port you're actively tuning):
+```bash
+docker exec syncd bcmcmd "dsh -c 'phydiag 126 tx_taps set pre3=0 pre2=0 pre1=-1 main=120 post1=0 post2=1 post3=0 lane=0'"
 ```
 For persistent tuning, push the equivalent values through SONiC's `media_settings.json`
 and `config reload` rather than poking the diag shell by hand — that's what actually
@@ -149,18 +256,24 @@ survives a reboot/reload.
 ## 6. Transceiver / optics (DOM)
 
 ```bash
-show interface transceiver eeprom --dom EthernetX
-show int transceiver status --verbose EthernetX
-sudo sfputil show eeprom --dom -p EthernetX
+show interface transceiver eeprom --dom Ethernet256
+show int transceiver status --verbose Ethernet256
+sudo sfputil show eeprom --dom -p Ethernet256
 ```
 Check: `DataPathActivated` per lane, `ConfigSuccess`, and DOM Tx/Rx power + bias against
-the module's own alarm/warning thresholds (printed by the same commands). For copper
-(DAC) cables, power/bias figures don't apply — go straight to PRBS/eyescan above.
+the module's own alarm/warning thresholds (printed by the same commands). Ethernet256 on
+seag158 is actually a copper/DAC port (`Application Advertisement: 800G-ETC-CR8 ...
+Copper cable`) — power/bias figures don't apply there; go straight to PRBS/eyescan/dsc
+above for copper.
 
 ## 7. Link training / autoneg
 
 ```bash
 show interfaces autoneg status
+```
+Real captured column for a forced-speed copper port: `Auto-Neg Mode: disabled` (not
+`N/A` — that generic value is from a different platform/build). To turn link training on:
+```bash
 sudo config interface link-training EthernetX on
 ```
 `PC_PORT_STATUS` (section 2) has the ground truth — `AUTONEG`/`AUTONEG_DONE` and
@@ -168,10 +281,11 @@ sudo config interface link-training EthernetX on
 other) can leave a link up on some cable lengths/types and down on others — confirm both
 ends agree before chasing anything else.
 
-## 8. Cold-reset the ASIC (last resort)
+## 8. Cold-reset the ASIC (last resort, not run live)
 
 Only when the diag shell itself is unresponsive, or you genuinely need a fresh power-on —
-this bounces the whole chip and takes every port down:
+this bounces the whole chip and takes every port down. **Not verified live** (deliberately
+not run against a shared/in-use box) — confirm on an idle unit before trusting it:
 ```bash
 fpga write32 0000:04:00.0 0x8 0x22    # TH6 into reset
 fpga write32 0000:04:00.0 0x8 0x422   # TH6 out of reset, sequencing handled by FPGA
@@ -185,3 +299,5 @@ fpga write32 0000:04:00.0 0x8 0x422   # TH6 out of reset, sequencing handled by 
 - Internal runbook: TraceIQ `runbooks/nexthop_internal/Layer_1_Troubleshooting_Guide.md`
 - [TH6 port-mapping](TH6_port_mapping.md) — rule out a lane/port-macro mapping problem
   before treating a serdes symptom as a real signal-integrity issue
+- All numbered examples above captured live against **seag158**, logical port 126
+  (`Ethernet256`/`etp33`), on 2026-07-29
