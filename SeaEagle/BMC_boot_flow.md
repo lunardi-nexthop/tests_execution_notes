@@ -96,12 +96,13 @@ The updater writes to the “inactive” slot to avoid corrupting the currently 
 - Golden OpenBMC stays the same as the backup path
 
 ### 5. Update U-Boot Environment (if using A/B or flags)
+
 In many designs, BMC-SONiC-OS will tell U-Boot what to boot next by:
 
 **Setting an environment variable** in U-Boot’s env storage (could be in SPI NOR or a small area on eMMC), such as:
 
 - `boot_target = SONiC_A` or `SONiC_B`
-- Possibly setting a “boot attempt counter” or “pending update” flag
+- - - Possibly setting a “boot attempt counter” or “pending update” flag
 
 This tells U-Boot: “On next reboot, try this new BMC-SONiC slot.”
 
@@ -116,6 +117,7 @@ On restart, the sequence is:
 4. System boots into the new BMC-SONiC-OS
 
 ### 7. Health Check and Success Path
+
 After boot, either U-Boot or BMC-SONiC-OS performs health checks, for example:
 
 - Did the OS reach a certain “ready” state in time?
@@ -156,6 +158,7 @@ You have a known-good environment to:
 - Retry the update with a different image
 
 ### 9. Key Points About What Gets Touched
+
 **During a normal BMC-SONiC upgrade:**
 
 
@@ -174,7 +177,7 @@ This keeps the bootloader + golden recovery path stable and trusted while allowi
 
 ---
 
-## Glossary
+## Reference
 
 ### SPI NOR
 
