@@ -33,3 +33,5 @@ docker exec syncd bcmcmd "bsh -c 'lt <TABLE> traverse -l'" # dump all entries
 
 - [TH6 port-mapping](TH6_port_mapping.md) — logical port ↔ physical lane ↔ port-macro
   mapping via `PC_*` tables, cross-checked against SONiC CONFIG_DB.
+- [TH6 L1/physical-layer troubleshooting](TH6_L1_troubleshooting.md) — `phydiag`/`dsc`,
+  PRBS, eye scan, FEC/BER, TX FIR tuning, link training.
